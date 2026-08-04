@@ -1,0 +1,359 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ParticleHero from './ParticleHero.astro';
+import SectionHeading from './SectionHeading.astro';
+import WorkCard from './WorkCard.astro';
+import PostCard from './PostCard.astro';
+import MusicVisualizer from './MusicVisualizer.astro';
+import Icon from './Icon.astro';
+import type { Locale } from '../i18n';
+import { ui, entriesFor } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = ui[locale];
+const prefix = locale === 'zh' ? '' : '/en';
+
+const allWorks = await getCollection('works');
+const allPosts = await getCollection('posts');
+const works = entriesFor(allWorks, locale)
+  .filter((work) => work.data.featured)
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .slice(0, 4);
+const posts = entriesFor(allPosts, locale)
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .slice(0, 3);
+---
+
+<BaseLayout locale={locale} title={`lordestar · ${t.site.tagline}`} description={t.site.description}>
+  <ParticleHero replayLabel={t.hero.replay} scrollLabel={t.hero.scroll} />
+
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      {[0, 1].map(() => (
+        <span class="marquee-group">
+          {t.home.marquee.map((word) => (
+            <span class="marquee-item">
+              {word}
+              <span class="marquee-sep">✦</span>
+            </span>
+          ))}
+        </span>
+      ))}
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div class="about-panel glass-strong" data-reveal>
+        <div class="about-copy">
+          <span class="eyebrow">{t.home.aboutEyebrow}</span>
+          <h2 class="about-title">{t.home.aboutTitle}</h2>
+          <p class="about-body">{t.home.aboutBody}</p>
+          <a class="text-link" href={`${prefix}/about/`}>
+            {t.home.aboutCta}
+            <Icon name="arrow-right" size={16} />
+          </a>
+        </div>
+        <div class="about-facts">
+          {ui[locale].about.facts.map((fact, index) => (
+            <div class="fact-row" style={`--reveal-delay: ${index * 70}ms`}>
+              <span class="fact-label">{fact.label}</span>
+              <span class="fact-value">{fact.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <SectionHeading
+        eyebrow={t.home.worksEyebrow}
+        title={t.home.worksTitle}
+        ctaHref={`${prefix}/works/`}
+        ctaLabel={t.home.worksCta}
+      />
+      {works.length > 0 ? (
+        <div class="works-grid">
+          {works.map((work, index) => (
+            <div style={`--reveal-delay: ${(index % 2) * 90}ms`}>
+              <WorkCard entry={work} locale={locale} prefix={prefix} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p class="empty">{t.works.empty}</p>
+      )}
+    </div>
+  </section>
+
+  <section class="section music-band">
+    <div class="container">
+      <div class="music-panel glass" data-reveal>
+        <div class="music-copy">
+          <span class="eyebrow">{t.home.musicEyebrow}</span>
+          <h2>{t.home.musicTitle}</h2>
+          <p>{t.home.musicBody}</p>
+          <a class="text-link" href={`${prefix}/works/`}>
+            {t.home.worksCta}
+            <Icon name="arrow-right" size={16} />
+          </a>
+        </div>
+        <div class="music-stage">
+          <MusicVisualizer accent="#f08a6f" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <SectionHeading
+        eyebrow={t.home.thoughtsEyebrow}
+        title={t.home.thoughtsTitle}
+        ctaHref={`${prefix}/thoughts/`}
+        ctaLabel={t.home.thoughtsCta}
+      />
+      {posts.length > 0 ? (
+        <div class="posts-grid">
+          {posts.map((post, index) => (
+            <div style={`--reveal-delay: ${index * 80}ms`}>
+              <PostCard entry={post} locale={locale} prefix={prefix} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p class="empty">{t.thoughts.empty}</p>
+      )}
+    </div>
+  </section>
+
+  <section class="section contact-band">
+    <div class="container">
+      <div class="contact-panel glass-strong" data-reveal>
+        <div>
+          <span class="eyebrow">{t.home.contactEyebrow}</span>
+          <h2>{t.home.contactTitle}</h2>
+          <p>{t.home.contactBody}</p>
+        </div>
+        <div class="contact-actions">
+          <a class="btn btn-solid" href="mailto:hello@lordestar.dev">
+            <Icon name="mail" size={16} />
+            {t.home.emailLabel}
+          </a>
+          <a class="btn" href="https://github.com/lordestar" target="_blank" rel="noreferrer">
+            <Icon name="github" size={16} />
+            GitHub
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .marquee {
+    border-block: 1px solid var(--border-soft);
+    padding-block: 18px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.025);
+  }
+
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee 26s linear infinite;
+  }
+
+  .marquee-group {
+    display: flex;
+  }
+
+  .marquee-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 34px;
+    padding-right: 34px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .marquee-sep {
+    color: var(--coral);
+    font-size: 0.7rem;
+  }
+
+  @keyframes marquee {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .about-panel {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 40px;
+    padding: 40px;
+  }
+
+  .about-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  .about-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.7rem, 3vw, 2.6rem);
+    font-weight: 680;
+    letter-spacing: 0;
+    line-height: 1.08;
+  }
+
+  .about-body {
+    max-width: 520px;
+    color: var(--text-soft);
+    font-size: 1.02rem;
+  }
+
+  .about-facts {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-left: 1px solid var(--border);
+    padding-left: 32px;
+  }
+
+  .fact-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 13px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .fact-row:last-child {
+    border-bottom: 0;
+  }
+
+  .fact-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .fact-value {
+    color: var(--text);
+    font-size: 0.96rem;
+    text-align: right;
+  }
+
+  .works-grid,
+  .posts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .music-band {
+    padding-block: 0 88px;
+  }
+
+  .music-panel {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 36px;
+    padding: 36px;
+  }
+
+  .music-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .music-copy h2,
+  .contact-panel h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 2.6vw, 2.3rem);
+    font-weight: 680;
+    letter-spacing: 0;
+  }
+
+  .music-copy p,
+  .contact-panel p {
+    color: var(--text-soft);
+  }
+
+  .music-stage {
+    min-height: 200px;
+  }
+
+  .empty {
+    color: var(--muted);
+  }
+
+  .contact-band {
+    padding-top: 0;
+  }
+
+  .contact-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    padding: 40px;
+  }
+
+  .contact-panel > div:first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .contact-actions {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 860px) {
+    .about-panel,
+    .music-panel {
+      grid-template-columns: 1fr;
+      padding: 28px;
+    }
+
+    .about-facts {
+      border-left: 0;
+      padding-left: 0;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+    }
+
+    .works-grid,
+    .posts-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .contact-panel {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 28px;
+    }
+  }
+</style>

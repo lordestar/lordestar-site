@@ -1,0 +1,35 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout locale="zh" title="404 · lordestar">
+  <section class="notfound">
+    <div class="container">
+      <span class="eyebrow">404</span>
+      <h1>lost in the static</h1>
+      <p>这个页面不存在，回到首页继续逛逛吧。</p>
+      <a class="btn btn-solid" href="/">Home</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .notfound {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    padding: var(--nav-h) 0 60px;
+  }
+
+  .notfound h1 {
+    margin-top: 14px;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    letter-spacing: 0;
+  }
+
+  .notfound p {
+    margin: 16px 0 26px;
+    color: var(--muted);
+  }
+</style>

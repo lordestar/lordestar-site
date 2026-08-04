@@ -1,0 +1,127 @@
+---
+import PixelDriftStage from './PixelDriftStage';
+
+interface Props {
+  replayLabel?: string;
+  scrollLabel?: string;
+}
+
+const { replayLabel = 'Replay', scrollLabel = 'SCROLL' } = Astro.props;
+---
+
+<section class="hero" aria-label="lordestar">
+  <h1 class="sr-only">lordestar</h1>
+
+  <PixelDriftStage client:load replayLabel={replayLabel} />
+
+  <div class="hero-meta hero-meta-left">
+    <span>BJTU</span>
+    <span>software engineering</span>
+  </div>
+  <div class="hero-meta hero-meta-right">
+    <span>music</span>
+    <span>code</span>
+    <span>internet culture</span>
+  </div>
+
+  <div class="scroll-cue" aria-hidden="true">
+    <span class="scroll-text">{scrollLabel}</span>
+    <span class="scroll-line"></span>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(13, 15, 14, 0.2), rgba(13, 15, 14, 0.92) 92%),
+      linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+    background-size: auto, 64px 64px, 64px 64px;
+    pointer-events: none;
+  }
+
+  .hero-meta {
+    position: absolute;
+    bottom: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  .hero-meta-left {
+    left: 24px;
+  }
+
+  .hero-meta-right {
+    right: 24px;
+    align-items: flex-end;
+  }
+
+  .scroll-cue {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+  }
+
+  .scroll-text {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 44px;
+    background: linear-gradient(180deg, var(--aqua), transparent);
+    animation: scrollDrop 2.2s var(--ease-out) infinite;
+  }
+
+  @keyframes scrollDrop {
+    0% {
+      transform: scaleY(0);
+      transform-origin: top;
+    }
+    45% {
+      transform: scaleY(1);
+      transform-origin: top;
+    }
+    55% {
+      transform: scaleY(1);
+      transform-origin: bottom;
+    }
+    100% {
+      transform: scaleY(0);
+      transform-origin: bottom;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .hero-meta {
+      display: none;
+    }
+  }
+</style>

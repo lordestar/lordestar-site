@@ -1,0 +1,76 @@
+---
+import Icon from './Icon.astro';
+import type { Locale } from '../i18n';
+import { ui } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  prefix: string;
+}
+
+const { locale, prefix } = Astro.props;
+const t = ui[locale];
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <div>
+      <p class="footer-line">{t.footer.line}</p>
+      <p class="footer-copy">© {year} lordestar. {t.footer.rights}</p>
+    </div>
+    <div class="footer-links">
+      <a class="icon-btn" href="https://github.com/lordestar" target="_blank" rel="noreferrer" aria-label="GitHub">
+        <Icon name="github" size={18} />
+      </a>
+      <a class="icon-btn" href="mailto:hello@lordestar.dev" aria-label="Email">
+        <Icon name="mail" size={18} />
+      </a>
+      <a class="icon-btn" href={`${prefix}/works/`} aria-label={t.nav.works}>
+        <Icon name="music" size={18} />
+      </a>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--border-soft);
+    padding: 42px 0;
+    margin-top: 40px;
+  }
+
+  .footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .footer-line {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  .footer-copy {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 10px;
+  }
+
+  @media (max-width: 560px) {
+    .footer-inner {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
+

@@ -1,0 +1,228 @@
+---
+interface Props {
+  audio?: string;
+  accent?: string;
+  title?: string;
+}
+
+const { audio, accent = '#7fc8c0', title } = Astro.props;
+---
+
+<div class="viz" style={`--accent: ${accent}`}>
+  <canvas class="viz-canvas" aria-hidden="true"></canvas>
+  {audio && (
+    <>
+      <button class="viz-toggle" type="button" aria-label={title ?? 'Play'}>
+        <svg class="viz-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
+          <polygon points="6 3 20 12 6 21 6 3" />
+        </svg>
+        <svg class="viz-pause" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
+          <rect x="14" y="4" width="4" height="16" rx="1" />
+          <rect x="6" y="4" width="4" height="16" rx="1" />
+        </svg>
+      </button>
+      <audio src={audio} preload="none"></audio>
+    </>
+  )}
+</div>
+
+<style>
+  .viz {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 120px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.22);
+    border-radius: var(--radius);
+  }
+
+  .viz-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .viz-toggle {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    width: 46px;
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--accent) 88%, #000);
+    color: #0d0f0e;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    transition: transform 0.25s var(--ease-out), filter 0.25s var(--ease-out);
+  }
+
+  .viz-toggle:hover {
+    transform: scale(1.06);
+    filter: brightness(1.08);
+  }
+
+  .viz-pause {
+    display: none;
+  }
+
+  .viz.is-playing .viz-play {
+    display: none;
+  }
+
+  .viz.is-playing .viz-pause {
+    display: block;
+  }
+</style>
+
+<script>
+  const roots = Array.from(document.querySelectorAll<HTMLElement>('.viz'));
+
+  for (const root of roots) {
+    const canvas = root.querySelector<HTMLCanvasElement>('.viz-canvas');
+    const toggle = root.querySelector<HTMLButtonElement>('.viz-toggle');
+    const audio = root.querySelector<HTMLAudioElement>('audio');
+    if (!canvas) continue;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) continue;
+
+    const accent =
+      getComputedStyle(root).getPropertyValue('--accent').trim() || '#7fc8c0';
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+    let playing = false;
+    let audioCtx: AudioContext | null = null;
+    let analyser: AnalyserNode | null = null;
+    let freq = new Uint8Array(128);
+    let raf = 0;
+    let rafStarted = false;
+
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.max(1, Math.round(width * dpr));
+      canvas.height = Math.max(1, Math.round(height * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function draw(time: number) {
+      const bars = width < 560 ? 34 : 52;
+      const gap = Math.max(1.5, width * 0.003);
+      const barWidth = (width - gap * (bars - 1)) / bars;
+      const centerY = height / 2;
+
+      ctx.clearRect(0, 0, width, height);
+
+      for (let i = 0; i < bars; i++) {
+        let v: number;
+        if (playing && analyser) {
+          const bin = Math.min(freq.length - 1, Math.floor((i / bars) * freq.length * 0.8));
+          v = freq[bin] / 255;
+        } else {
+          v =
+            0.18 +
+            0.22 * Math.sin(time * 0.0018 + i * 0.38) +
+            0.12 * Math.sin(time * 0.0031 + i * 0.71 + 1.7) +
+            0.06 * Math.sin(time * 0.005 + i * 0.19);
+          v = Math.max(0.06, Math.min(0.92, v));
+        }
+
+        const barHeight = Math.max(3, v * (height - 12));
+        const x = i * (barWidth + gap);
+        const y = centerY - barHeight / 2;
+        const alpha = 0.38 + v * 0.55;
+
+        ctx.fillStyle = accent;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') {
+          ctx.roundRect(x, y, barWidth, barHeight, 2);
+        } else {
+          ctx.rect(x, y, barWidth, barHeight);
+        }
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function frame(time: number) {
+      if (playing && analyser) {
+        analyser.getByteFrequencyData(freq);
+      }
+      draw(time);
+      raf = requestAnimationFrame(frame);
+    }
+
+    function ensureRunning() {
+      if (!rafStarted) {
+        rafStarted = true;
+        raf = requestAnimationFrame(frame);
+      }
+    }
+
+    if (toggle && audio) {
+      toggle.addEventListener('click', async () => {
+        if (!audioCtx) {
+          audioCtx = new AudioContext();
+          const source = audioCtx.createMediaElementSource(audio);
+          analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 256;
+          source.connect(analyser);
+          analyser.connect(audioCtx.destination);
+        }
+
+        if (playing) {
+          audio.pause();
+        } else {
+          document.querySelectorAll<HTMLAudioElement>('.viz audio').forEach((other) => {
+            if (other !== audio) other.pause();
+          });
+          await audioCtx.resume();
+          await audio.play();
+        }
+      });
+
+      audio.addEventListener('play', () => {
+        playing = true;
+        root.classList.add('is-playing');
+        ensureRunning();
+      });
+      audio.addEventListener('pause', () => {
+        playing = false;
+        root.classList.remove('is-playing');
+      });
+      audio.addEventListener('ended', () => {
+        playing = false;
+        root.classList.remove('is-playing');
+      });
+    } else {
+      ensureRunning();
+    }
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          ensureRunning();
+        } else if (rafStarted && !playing) {
+          cancelAnimationFrame(raf);
+          rafStarted = false;
+        }
+      },
+      { threshold: 0.1 },
+    );
+    io.observe(root);
+
+    const resizeObserver = new ResizeObserver(() => resize());
+    resizeObserver.observe(root);
+    resize();
+  }
+</script>
+

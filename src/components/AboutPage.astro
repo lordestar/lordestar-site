@@ -1,0 +1,216 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from './PageHero.astro';
+import Icon from './Icon.astro';
+import type { Locale } from '../i18n';
+import { ui } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = ui[locale];
+const prefix = locale === 'zh' ? '' : '/en';
+---
+
+<BaseLayout locale={locale} title={`${t.about.title} · lordestar`}>
+  <PageHero eyebrow="about" title={t.about.title} subtitle={t.about.subtitle} />
+
+  <section class="section about-section">
+    <div class="container">
+      <div class="bio-layout">
+        <div class="bio-panel glass-strong" data-reveal>
+          <span class="eyebrow">{t.about.bioTitle}</span>
+          <p class="bio-text">{t.about.bioBody}</p>
+          <div class="bio-social">
+            <a class="icon-btn" href="https://github.com/lordestar" target="_blank" rel="noreferrer" aria-label="GitHub">
+              <Icon name="github" size={18} />
+            </a>
+            <a class="icon-btn" href="mailto:hello@lordestar.dev" aria-label="Email">
+              <Icon name="mail" size={18} />
+            </a>
+          </div>
+        </div>
+
+        <div class="facts-panel glass" data-reveal style="--reveal-delay: 90ms">
+          <span class="eyebrow">{t.about.factsTitle}</span>
+          <div class="facts-list">
+            {t.about.facts.map((fact) => (
+              <div class="fact-row">
+                <span class="fact-label">{fact.label}</span>
+                <span class="fact-value">{fact.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-block" data-reveal>
+        <span class="eyebrow">{t.about.timelineTitle}</span>
+        <div class="timeline">
+          {t.about.timeline.map((item) => (
+            <div class="timeline-item">
+              <span class="timeline-date">{item.date}</span>
+              <div class="timeline-content">
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="tools-block" data-reveal>
+        <span class="eyebrow">{t.about.toolsTitle}</span>
+        <div class="tools-list">
+          {t.about.tools.map((tool) => (
+            <span class="tag tool-tag">{tool}</span>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .about-section {
+    padding-top: 0;
+  }
+
+  .bio-layout {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 20px;
+  }
+
+  .bio-panel,
+  .facts-panel {
+    padding: 34px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .bio-text {
+    font-size: 1.08rem;
+    color: var(--text-soft);
+    max-width: 560px;
+  }
+
+  .bio-social {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+  }
+
+  .facts-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .fact-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 14px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .fact-row:last-child {
+    border-bottom: 0;
+  }
+
+  .fact-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .fact-value {
+    color: var(--text);
+    text-align: right;
+  }
+
+  .timeline-block,
+  .tools-block {
+    margin-top: 64px;
+  }
+
+  .timeline {
+    margin-top: 24px;
+    border-left: 1px solid var(--border);
+    padding-left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .timeline-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 20px;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -29px;
+    top: 6px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--aqua);
+    box-shadow: 0 0 0 4px rgba(127, 200, 192, 0.14);
+  }
+
+  .timeline-date {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--muted);
+    padding-top: 4px;
+  }
+
+  .timeline-content h3 {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 650;
+    letter-spacing: 0;
+  }
+
+  .timeline-content p {
+    margin-top: 6px;
+    color: var(--text-soft);
+    font-size: 0.95rem;
+  }
+
+  .tools-list {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .tool-tag {
+    height: 32px;
+    padding-inline: 14px;
+    font-size: 0.78rem;
+    color: var(--text-soft);
+  }
+
+  @media (max-width: 860px) {
+    .bio-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .timeline-item {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+  }
+</style>
+

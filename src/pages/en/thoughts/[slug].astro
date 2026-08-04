@@ -1,0 +1,20 @@
+---
+import { getCollection } from 'astro:content';
+import PostPage from '../../../components/PostPage.astro';
+import { localeFromId } from '../../../i18n';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  return posts
+    .filter((post) => localeFromId(post.id) === 'en')
+    .map((post) => ({
+      params: { slug: post.id.replace(/^en\//, '').replace(/\.md$/, '') },
+      props: { entry: post },
+    }));
+}
+
+const { entry } = Astro.props;
+---
+
+<PostPage locale="en" entry={entry} />
+

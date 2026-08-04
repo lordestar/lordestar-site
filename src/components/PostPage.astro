@@ -1,0 +1,85 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import type { Locale } from '../i18n';
+import { ui } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  entry: {
+    id: string;
+    data: {
+      title: string;
+      date: Date;
+      summary: string;
+      tags: string[];
+    };
+  };
+}
+
+const { locale, entry } = Astro.props;
+const t = ui[locale];
+const { Content } = await render(entry);
+const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+}).format(entry.data.date);
+---
+
+<BaseLayout locale={locale} title={`${entry.data.title} · lordestar`}>
+  <article class="post-page">
+    <div class="container">
+      <header class="post-header" data-reveal>
+        <span class="eyebrow">{t.nav.thoughts}</span>
+        <h1 class="post-title">{entry.data.title}</h1>
+        <div class="post-meta">
+          <span>{dateLabel}</span>
+          {entry.data.tags.map((tag) => (
+            <span class="tag">{tag}</span>
+          ))}
+        </div>
+      </header>
+
+      <div class="post-body glass-strong markdown-body" data-reveal>
+        <Content />
+      </div>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .post-page {
+    padding: calc(var(--nav-h) + 72px) 0 40px;
+  }
+
+  .post-header {
+    max-width: 760px;
+    margin-inline: auto;
+    margin-bottom: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .post-title {
+    font-size: clamp(2rem, 4vw, 3.2rem);
+  }
+
+  .post-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  .post-body {
+    max-width: 760px;
+    margin-inline: auto;
+    padding: 36px;
+  }
+</style>
+

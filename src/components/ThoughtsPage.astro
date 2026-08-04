@@ -1,0 +1,56 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from './PageHero.astro';
+import PostCard from './PostCard.astro';
+import type { Locale } from '../i18n';
+import { ui, entriesFor } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = ui[locale];
+const prefix = locale === 'zh' ? '' : '/en';
+const posts = entriesFor(await getCollection('posts'), locale).sort((a, b) =>
+  b.data.date.getTime() - a.data.date.getTime(),
+);
+---
+
+<BaseLayout locale={locale} title={`${t.thoughts.title} · lordestar`}>
+  <PageHero eyebrow="thoughts" title={t.thoughts.title} subtitle={t.thoughts.subtitle} />
+
+  <section class="section thoughts-section">
+    <div class="container">
+      {posts.length > 0 ? (
+        <div class="posts-list">
+          {posts.map((post, index) => (
+            <div style={`--reveal-delay: ${index * 70}ms`}>
+              <PostCard entry={post} locale={locale} prefix={prefix} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p class="empty">{t.thoughts.empty}</p>
+      )}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .thoughts-section {
+    padding-top: 0;
+  }
+
+  .posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .empty {
+    color: var(--muted);
+  }
+</style>
+
