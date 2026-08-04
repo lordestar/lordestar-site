@@ -16,7 +16,7 @@ const config = {
   particleSize: 8,
   particleCount: 46,
   mouseEnabled: true,
-  mouseRadius: 120,
+  mouseRadius: 80,
   mouseForce: 26,
   fontSize: 150,
   autoFit: true,
