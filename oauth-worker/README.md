@@ -1,6 +1,6 @@
 # lordestar Decap OAuth Worker
 
-为 Decap CMS 提供 GitHub OAuth 登录的 Cloudflare Worker。部署后把 `public/admin/config.yml` 的 `base_url` 指向这个 Worker 地址。
+为 Decap CMS 提供 GitHub OAuth 登录的 Cloudflare Worker。当前线上站点改用 `functions/admin/oauth/`（Pages Functions，挂在 `lordestar.pages.dev/admin/oauth` 下），本目录保留为独立 Worker 备用方案。
 
 ## 部署
 

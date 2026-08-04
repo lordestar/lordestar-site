@@ -62,13 +62,21 @@ Decap CMS 配置在 `public/admin/config.yml`，其中 `repo`、`base_url` 需�
 
 Decap CMS 的 GitHub 登录需要一个 OAuth 服务，推荐部署一个免费 Cloudflare Worker：
 
-仓库里已经准备好 Worker 代码（`oauth-worker/`），部署步骤见 [oauth-worker/README.md](oauth-worker/README.md)：
+本仓库已经把 OAuth 服务实现为 Cloudflare Pages Functions（`functions/admin/oauth/`），部署在同一个 `lordestar.pages.dev` 域名下，不需要额外服务：
 
 1. 在 GitHub 创建 OAuth App：Settings > Developer settings > OAuth Apps > New OAuth App。
    - Homepage URL：你的站点地址，例如 `https://lordestar.pages.dev`
-   - Authorization callback URL：`https://lordestar-decap-oauth.<你的 Cloudflare 子域>.workers.dev/callback`
-2. 进入 `oauth-worker/`，用 `pnpm install` 安装依赖，再用 `pnpm wrangler secret put` 配置 `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`，最后 `pnpm deploy`。
+   - Authorization callback URL：`https://lordestar.pages.dev/admin/oauth/callback`
+2. 把 `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` 配置为 Pages 项目加密环境变量：
+
+   ```bash
+   wrangler pages secret put GITHUB_CLIENT_ID --project-name lordestar
+   wrangler pages secret put GITHUB_CLIENT_SECRET --project-name lordestar
+   ```
+
 3. 更新 `public/admin/config.yml`：
    - `repo: lordestar/lordestar-site`
-   - `base_url: https://lordestar-decap-oauth.<你的 Cloudflare 子域>.workers.dev`
-4. 提交并推送，Cloudflare Pages 会自动重新部署；之后访问 `/admin` 即可用 GitHub 登录后台。
+   - `base_url: https://lordestar.pages.dev/admin/oauth`
+4. 重新部署后访问 `/admin` 即可用 GitHub 登录后台。
+
+`oauth-worker/` 是同一套逻辑的独立 Worker 版本，作为备用方案保留，当前线上使用的是 Pages Functions。
