@@ -1,0 +1,7 @@
+name = "lordestar-decap-oauth"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+
+# GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET 通过 wrangler secret 配置：
+#   wrangler secret put GITHUB_CLIENT_ID
+#   wrangler secret put GITHUB_CLIENT_SECRET

@@ -2,6 +2,7 @@ backend:
   name: github
   repo: lordestar/lordestar-site
   branch: main
+  # 上线前替换为 oauth-worker 部署后的地址，例如 https://lordestar-decap-oauth.xxx.workers.dev
   base_url: https://oauth.example.workers.dev
 
 local_backend: false
@@ -47,4 +48,3 @@ collections:
       - { label: Summary, name: summary, widget: text }
       - { label: Tags, name: tags, widget: list, default: [] }
       - { label: Body, name: body, widget: markdown }
-
