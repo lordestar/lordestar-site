@@ -6,4 +6,3 @@ tags: [sample, music]
 ---
 
 This is a sample post. Use it to record songs you keep playing, favorite parts, or what music makes you think about.
-

@@ -8,4 +8,3 @@ tags: [sample]
 Hello, world. This is the first sample post on the lordestar site.
 
 Later this will be a place for thoughts about music, technology and everyday life.
-

@@ -13,8 +13,8 @@ interface Props {
 const { locale } = Astro.props;
 const t = ui[locale];
 const prefix = locale === 'zh' ? '' : '/en';
-const posts = entriesFor(await getCollection('posts'), locale).sort((a, b) =>
-  b.data.date.getTime() - a.data.date.getTime(),
+const posts = entriesFor(await getCollection('posts'), locale).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
 );
 ---
 
@@ -23,17 +23,19 @@ const posts = entriesFor(await getCollection('posts'), locale).sort((a, b) =>
 
   <section class="section thoughts-section">
     <div class="container">
-      {posts.length > 0 ? (
-        <div class="posts-list">
-          {posts.map((post, index) => (
-            <div style={`--reveal-delay: ${index * 70}ms`}>
-              <PostCard entry={post} locale={locale} prefix={prefix} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p class="empty">{t.thoughts.empty}</p>
-      )}
+      {
+        posts.length > 0 ? (
+          <div class="posts-list">
+            {posts.map((post, index) => (
+              <div style={`--reveal-delay: ${index * 70}ms`}>
+                <PostCard entry={post} locale={locale} prefix={prefix} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p class="empty">{t.thoughts.empty}</p>
+        )
+      }
     </div>
   </section>
 </BaseLayout>
@@ -53,4 +55,3 @@ const posts = entriesFor(await getCollection('posts'), locale).sort((a, b) =>
     color: var(--muted);
   }
 </style>
-

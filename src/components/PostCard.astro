@@ -1,25 +1,18 @@
 ---
+import type { CollectionEntry } from 'astro:content';
 import Icon from './Icon.astro';
 import type { Locale } from '../i18n';
-import { ui } from '../i18n';
+import { slugFromId, ui } from '../i18n';
 
 interface Props {
-  entry: {
-    id: string;
-    data: {
-      title: string;
-      date: Date;
-      summary: string;
-      tags: string[];
-    };
-  };
+  entry: CollectionEntry<'posts'>;
   locale: Locale;
   prefix: string;
 }
 
 const { entry, locale, prefix } = Astro.props;
 const t = ui[locale];
-const slug = entry.id.replace(/^(zh|en)\//, '').replace(/\.md$/, '');
+const slug = slugFromId(entry.id);
 const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
   year: 'numeric',
   month: 'short',
@@ -30,9 +23,7 @@ const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
 <article class="post-card glass" data-reveal>
   <div class="post-meta">
     <span class="post-date">{dateLabel}</span>
-    {entry.data.tags.slice(0, 3).map((tag) => (
-      <span class="tag">{tag}</span>
-    ))}
+    {entry.data.tags.slice(0, 3).map((tag) => <span class="tag">{tag}</span>)}
   </div>
   <h3>
     <a href={`${prefix}/thoughts/${slug}/`}>{entry.data.title}</a>

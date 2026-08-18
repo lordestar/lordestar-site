@@ -1,4 +1,5 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection } from 'astro:content';
+import { z } from 'astro/zod';
 import { glob } from 'astro/loaders';
 
 const works = defineCollection({
@@ -8,10 +9,10 @@ const works = defineCollection({
     generateId: ({ entry }) => entry.replace(/\.(md|mdx)$/, ''),
   }),
   schema: z.object({
-    title: z.string(),
-    type: z.enum(['music', 'code']),
-    date: z.coerce.date(),
-    summary: z.string(),
+    title: z.string().default(''),
+    type: z.enum(['music', 'code']).default('music'),
+    date: z.coerce.date().default(new Date(0)),
+    summary: z.string().default(''),
     tags: z.array(z.string()).default([]),
     link: z.string().optional(),
     audio: z.string().optional(),
@@ -27,9 +28,9 @@ const posts = defineCollection({
     generateId: ({ entry }) => entry.replace(/\.(md|mdx)$/, ''),
   }),
   schema: z.object({
-    title: z.string(),
-    date: z.coerce.date(),
-    summary: z.string(),
+    title: z.string().default(''),
+    date: z.coerce.date().default(new Date(0)),
+    summary: z.string().default(''),
     tags: z.array(z.string()).default([]),
   }),
 });

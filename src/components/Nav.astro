@@ -28,9 +28,7 @@ const otherLabel = locale === 'zh' ? 'EN' : '中文';
     </a>
 
     <nav class="nav-links" aria-label={t.site.name}>
-      {links.map((link) => (
-        <a href={link.href}>{link.label}</a>
-      ))}
+      {links.map((link) => <a href={link.href}>{link.label}</a>)}
     </nav>
 
     <div class="nav-actions">
@@ -140,7 +138,9 @@ const otherLabel = locale === 'zh' ? 'EN' : '中文';
     padding-inline: 12px;
     display: inline-flex;
     align-items: center;
-    transition: color 0.25s var(--ease-out), border-color 0.25s var(--ease-out);
+    transition:
+      color 0.25s var(--ease-out),
+      border-color 0.25s var(--ease-out);
   }
 
   .nav-lang:hover {
@@ -170,7 +170,9 @@ const otherLabel = locale === 'zh' ? 'EN' : '中文';
       opacity: 0;
       pointer-events: none;
       transform: translateY(-8px);
-      transition: opacity 0.28s var(--ease-out), transform 0.28s var(--ease-out);
+      transition:
+        opacity 0.28s var(--ease-out),
+        transform 0.28s var(--ease-out);
     }
 
     .nav-links.is-open {
@@ -217,4 +219,3 @@ const otherLabel = locale === 'zh' ? 'EN' : '中文';
     });
   }
 </script>
-

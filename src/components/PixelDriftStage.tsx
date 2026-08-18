@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Pixeldrift from "@/components/originkit/ui/pixeldrift";
+import { useState } from 'react';
+import Pixeldrift from '@/components/originkit/ui/pixeldrift';
 
 interface PixelDriftStageProps {
   replayLabel?: string;
 }
 
 const config = {
-  text: "lordestar",
-  colors: ["#f5f7fa", "#f08a6f", "#7fc8c0", "#e8c176", "#b7a6f5", "#eda6c3"],
-  mode: "onEnter" as const,
+  text: 'lordestar',
+  colors: ['#f5f7fa', '#f08a6f', '#7fc8c0', '#e8c176', '#b7a6f5', '#eda6c3'],
+  mode: 'onEnter' as const,
   replay: true,
-  position: "middle" as const,
+  position: 'middle' as const,
   particleSize: 8,
   particleCount: 46,
   mouseEnabled: true,
@@ -20,22 +20,16 @@ const config = {
   mouseForce: 26,
   fontSize: 150,
   autoFit: true,
-  transition: { type: "tween" as const, duration: 1.4, ease: "easeOut" },
+  transition: { type: 'tween' as const, duration: 1.4, ease: 'easeOut' },
 };
 
-export default function PixelDriftStage({
-  replayLabel = "Replay",
-}: PixelDriftStageProps) {
+export default function PixelDriftStage({ replayLabel = 'Replay' }: PixelDriftStageProps) {
   const [replayKey, setReplayKey] = useState(0);
 
   return (
     <>
       <div className="pixel-drift-stage">
-        <Pixeldrift
-          key={replayKey}
-          {...config}
-          style={{ minWidth: 0, minHeight: 0 }}
-        />
+        <Pixeldrift key={replayKey} {...config} style={{ minWidth: 0, minHeight: 0 }} />
       </div>
       <button
         className="btn replay-btn"

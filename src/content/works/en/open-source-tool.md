@@ -9,4 +9,3 @@ featured: true
 ---
 
 Sample body. Tech works can include repo links, stack, the problem solved and results.
-

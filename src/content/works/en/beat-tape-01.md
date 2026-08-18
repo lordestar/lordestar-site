@@ -9,4 +9,3 @@ featured: false
 ---
 
 Sample body. You can write about the production process and inspirations here later.
-

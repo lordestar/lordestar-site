@@ -8,4 +8,3 @@ featured: false
 ---
 
 Sample body. Write about the background, your role, the stack and the outcome.
-

@@ -1,0 +1,352 @@
+---
+import Icon from './Icon.astro';
+
+interface Props {
+  images: string[];
+  locale?: 'zh' | 'en';
+}
+
+const { images, locale = 'zh' } = Astro.props;
+const widths = [9, 7, 8, 10, 6, 9, 8, 7, 10, 8, 9, 7];
+const openLabel = locale === 'zh' ? '查看大图' : 'View photo';
+const closeLabel = locale === 'zh' ? '关闭' : 'Close';
+---
+
+<div class="galaxy-wrap">
+  <div class="galaxy" data-galaxy>
+    <div class="galaxy-scrim"></div>
+    {
+      images.map((src, index) => (
+        <figure
+          class="galaxy-item"
+          data-galaxy-item
+          style={`width: ${widths[index % widths.length]}%`}
+          role="button"
+          tabindex="0"
+          aria-label={openLabel}
+        >
+          <img src={src} alt="" loading="lazy" decoding="async" draggable="false" />
+          <span class="galaxy-overlay" aria-hidden="true" />
+        </figure>
+      ))
+    }
+  </div>
+  <div class="galaxy-slot">
+    <slot />
+  </div>
+  <div class="galaxy-viewer" data-galaxy-viewer hidden aria-hidden="true">
+    <button class="viewer-close" type="button" data-viewer-close aria-label={closeLabel}>
+      <Icon name="close" size={20} />
+    </button>
+    <figure class="viewer-frame">
+      <img data-viewer-img alt="" />
+      <figcaption class="viewer-caption" data-viewer-caption></figcaption>
+    </figure>
+  </div>
+</div>
+
+<script>
+  import { ImageGalaxy } from './image-galaxy/engine';
+
+  const root = document.querySelector<HTMLElement>('[data-galaxy]');
+  if (root) {
+    const items = Array.from(root.querySelectorAll<HTMLElement>('[data-galaxy-item]'));
+    const overlays = items.map((item) => item.querySelector<HTMLElement>('.galaxy-overlay'));
+    const galaxy = new ImageGalaxy(root, items, overlays);
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const viewer = document.querySelector<HTMLElement>('[data-galaxy-viewer]');
+    const viewerImg = viewer?.querySelector<HTMLImageElement>('[data-viewer-img]');
+    const viewerCaption = viewer?.querySelector<HTMLElement>('[data-viewer-caption]');
+    const viewerClose = viewer?.querySelector<HTMLButtonElement>('[data-viewer-close]');
+    let viewerOpen = false;
+    let lastFocusedItem: HTMLElement | null = null;
+
+    const inViewport = (el: HTMLElement) => {
+      const rect = el.getBoundingClientRect();
+      return rect.bottom > 0 && rect.top < window.innerHeight;
+    };
+
+    const openViewer = (item: HTMLElement) => {
+      const img = item.querySelector<HTMLImageElement>('img');
+      const src = img?.getAttribute('src');
+      if (!src || !viewer || !viewerImg) return;
+      const name = decodeURIComponent(src.split('/').pop()?.split('?')[0] ?? '');
+      viewerImg.src = src;
+      viewerImg.alt = img?.alt ?? '';
+      if (viewerCaption) viewerCaption.textContent = name;
+      viewer.hidden = false;
+      viewer.setAttribute('aria-hidden', 'false');
+      viewerOpen = true;
+      lastFocusedItem = item;
+      galaxy.stop();
+      document.documentElement.classList.add('galaxy-viewer-open');
+      viewerClose?.focus();
+    };
+
+    const closeViewer = () => {
+      if (!viewer || !viewerOpen) return;
+      viewerOpen = false;
+      viewer.hidden = true;
+      viewer.setAttribute('aria-hidden', 'true');
+      document.documentElement.classList.remove('galaxy-viewer-open');
+      if (!reduced && inViewport(root)) galaxy.start();
+      lastFocusedItem?.focus();
+    };
+
+    root.addEventListener('click', (event) => {
+      const item = (event.target as HTMLElement).closest<HTMLElement>('[data-galaxy-item]');
+      if (item) openViewer(item);
+    });
+
+    root.addEventListener('keydown', (event) => {
+      const item = (event.target as HTMLElement).closest<HTMLElement>('[data-galaxy-item]');
+      if (!item || (event.key !== 'Enter' && event.key !== ' ')) return;
+      event.preventDefault();
+      openViewer(item);
+    });
+
+    viewerClose?.addEventListener('click', closeViewer);
+    viewer?.addEventListener('click', (event) => {
+      if (event.target === viewer) closeViewer();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (viewerOpen && event.key === 'Escape') closeViewer();
+    });
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (reduced) {
+          galaxy.stop();
+          return;
+        }
+        if (entry.isIntersecting) galaxy.start();
+        else galaxy.stop();
+      },
+      { threshold: 0.05 },
+    );
+    io.observe(root);
+
+    const ro = new ResizeObserver(() => galaxy.layout());
+    ro.observe(root);
+
+    let lastWheel = 0;
+    window.addEventListener(
+      'wheel',
+      (event) => {
+        if (viewerOpen) return;
+        const now = performance.now();
+        if (now - lastWheel < 40) return;
+        lastWheel = now;
+        galaxy.addScroll(event.deltaY, Math.sign(event.deltaY));
+      },
+      { passive: true },
+    );
+  }
+</script>
+
+<style>
+  .galaxy-wrap {
+    position: relative;
+    height: 100%;
+    min-height: 420px;
+  }
+
+  .galaxy {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    perspective: 900px;
+    background: var(--bg-raise);
+  }
+
+  .galaxy-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(13, 15, 14, 0.72),
+        rgba(13, 15, 14, 0.18) 38%,
+        rgba(13, 15, 14, 0.72)
+      ),
+      radial-gradient(120% 90% at 50% 42%, transparent 42%, rgba(13, 15, 14, 0.55));
+    pointer-events: none;
+  }
+
+  .galaxy-item {
+    position: absolute;
+    aspect-ratio: 4 / 3;
+    z-index: 1;
+    margin: 0;
+    overflow: hidden;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42);
+    will-change: transform;
+    user-select: none;
+    cursor: zoom-in;
+  }
+
+  .galaxy-item:focus-visible {
+    outline: 2px solid var(--accent, #f2c94c);
+    outline-offset: 3px;
+  }
+
+  .galaxy-item:nth-child(3n + 2) {
+    aspect-ratio: 3 / 4;
+  }
+
+  .galaxy-item:nth-child(4n) {
+    aspect-ratio: 1 / 1;
+  }
+
+  .galaxy-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: filter 180ms ease;
+  }
+
+  .galaxy-item:hover img,
+  .galaxy-item:focus-visible img {
+    filter: brightness(1.14) saturate(1.06);
+  }
+
+  .galaxy-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.18);
+    pointer-events: none;
+  }
+
+  .galaxy-slot {
+    position: relative;
+    z-index: 3;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .galaxy-slot > * {
+    pointer-events: auto;
+  }
+
+  .galaxy-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(8, 10, 9, 0.86);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .galaxy-viewer[hidden] {
+    display: none;
+  }
+
+  html.galaxy-viewer-open,
+  html.galaxy-viewer-open body {
+    overflow: hidden;
+  }
+
+  .viewer-close {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    cursor: pointer;
+    transition:
+      background 180ms ease,
+      transform 180ms ease;
+  }
+
+  .viewer-close:hover {
+    background: rgba(255, 255, 255, 0.16);
+    transform: scale(1.05);
+  }
+
+  .viewer-frame {
+    margin: 0;
+    max-width: min(960px, 94vw);
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    animation: galaxy-viewer-in 220ms ease-out both;
+  }
+
+  .viewer-frame img {
+    display: block;
+    max-width: 100%;
+    max-height: 78vh;
+    object-fit: contain;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 10px;
+    background: #000;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  }
+
+  .viewer-caption {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: 0.9rem;
+    color: var(--muted);
+    letter-spacing: 0;
+    text-align: center;
+  }
+
+  @keyframes galaxy-viewer-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @media (max-width: 700px) {
+    .galaxy-wrap {
+      min-height: 380px;
+    }
+
+    .galaxy-item {
+      width: 24% !important;
+      aspect-ratio: 4 / 3 !important;
+    }
+
+    .galaxy-viewer {
+      padding: 16px;
+    }
+
+    .viewer-close {
+      top: 14px;
+      right: 14px;
+      width: 40px;
+      height: 40px;
+    }
+
+    .viewer-frame img {
+      max-height: 72vh;
+    }
+  }
+</style>

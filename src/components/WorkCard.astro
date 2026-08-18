@@ -1,28 +1,16 @@
 ---
+import type { CollectionEntry } from 'astro:content';
 import Icon from './Icon.astro';
 import MusicVisualizer from './MusicVisualizer.astro';
 import type { Locale } from '../i18n';
 import { ui } from '../i18n';
 
 interface Props {
-  entry: {
-    id: string;
-    data: {
-      title: string;
-      type: 'music' | 'code';
-      date: Date;
-      summary: string;
-      tags: string[];
-      link?: string;
-      audio?: string;
-      cover?: string;
-    };
-  };
+  entry: CollectionEntry<'works'>;
   locale: Locale;
-  prefix: string;
 }
 
-const { entry, locale, prefix } = Astro.props;
+const { entry, locale } = Astro.props;
 const t = ui[locale];
 const { title, type, date, summary, tags, link, audio, cover } = entry.data;
 const accent = type === 'music' ? '#f08a6f' : '#7fc8c0';
@@ -34,34 +22,36 @@ const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
 
 <article class="work-card glass" data-reveal data-type={type}>
   <div class="work-media" style={`--accent: ${accent}`}>
-    {cover ? (
-      <img src={cover} alt={title} loading="lazy" />
-    ) : audio ? (
-      <MusicVisualizer audio={audio} accent={accent} title={title} />
-    ) : (
-      <div class="work-placeholder">
-        <Icon name={type === 'music' ? 'music' : 'code'} size={40} />
-        <span class="work-kind">{type}</span>
-      </div>
-    )}
+    {
+      cover ? (
+        <img src={cover} alt={title} loading="lazy" />
+      ) : audio ? (
+        <MusicVisualizer audio={audio} accent={accent} title={title} />
+      ) : (
+        <div class="work-placeholder">
+          <Icon name={type === 'music' ? 'music' : 'code'} size={40} />
+          <span class="work-kind">{type}</span>
+        </div>
+      )
+    }
     <span class="work-type-badge">{type}</span>
   </div>
 
   <div class="work-body">
     <div class="work-meta">
       <span>{dateLabel}</span>
-      {tags.slice(0, 3).map((tag) => (
-        <span class="tag">{tag}</span>
-      ))}
+      {tags.slice(0, 3).map((tag) => <span class="tag">{tag}</span>)}
     </div>
     <h3>{title}</h3>
     <p>{summary}</p>
-    {link && (
-      <a class="text-link" href={link} target="_blank" rel="noreferrer">
-        {t.works.external}
-        <Icon name="external-link" size={15} />
-      </a>
-    )}
+    {
+      link && (
+        <a class="text-link" href={link} target="_blank" rel="noreferrer">
+          {t.works.external}
+          <Icon name="external-link" size={15} />
+        </a>
+      )
+    }
   </div>
 </article>
 
@@ -159,4 +149,3 @@ const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
     padding-top: 6px;
   }
 </style>
-

@@ -2,6 +2,8 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from './PageHero.astro';
+import DotCutHero from './DotCutHero.astro';
+import FeaturedWorks from './FeaturedWorks';
 import WorkCard from './WorkCard.astro';
 import type { Locale } from '../i18n';
 import { ui, entriesFor } from '../i18n';
@@ -12,19 +14,48 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = ui[locale];
-const prefix = locale === 'zh' ? '' : '/en';
-const works = entriesFor(await getCollection('works'), locale).sort((a, b) =>
-  b.data.date.getTime() - a.data.date.getTime(),
+const works = entriesFor(await getCollection('works'), locale).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
 );
 const musicCount = works.filter((work) => work.data.type === 'music').length;
 const codeCount = works.filter((work) => work.data.type === 'code').length;
+
+const fmtDate = (date: Date) =>
+  new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+    year: 'numeric',
+    month: 'short',
+  }).format(date);
+
+const toBrief = (work: (typeof works)[number] | undefined) =>
+  work
+    ? {
+        title: work.data.title,
+        date: fmtDate(work.data.date),
+        summary: work.data.summary,
+      }
+    : null;
+
+const latestMusic = works.find((work) => work.data.type === 'music');
+const latestCode = works.find((work) => work.data.type === 'code');
 ---
 
 <BaseLayout locale={locale} title={`${t.works.title} · lordestar`}>
   <PageHero eyebrow="works" title={t.works.title} subtitle={t.works.subtitle} />
+  <DotCutHero variant="bar" symbol="L" />
 
   <section class="section works-section">
     <div class="container">
+      <FeaturedWorks
+        client:load
+        eyebrow={t.works.featuredEyebrow}
+        title={t.works.featuredTitle}
+        latestLabel={t.works.latest}
+        musicLabel={t.works.music}
+        codeLabel={t.works.code}
+        music={toBrief(latestMusic)}
+        code={toBrief(latestCode)}
+      />
+
       <div class="filters" data-reveal>
         <button class="filter-btn is-active" type="button" data-filter="all">
           {t.works.all}
@@ -40,17 +71,19 @@ const codeCount = works.filter((work) => work.data.type === 'code').length;
         </button>
       </div>
 
-      {works.length > 0 ? (
-        <div class="works-grid">
-          {works.map((work, index) => (
-            <div class="work-slot" style={`--reveal-delay: ${(index % 2) * 90}ms`}>
-              <WorkCard entry={work} locale={locale} prefix={prefix} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p class="empty">{t.works.empty}</p>
-      )}
+      {
+        works.length > 0 ? (
+          <div class="works-grid">
+            {works.map((work, index) => (
+              <div class="work-slot" style={`--reveal-delay: ${(index % 2) * 90}ms`}>
+                <WorkCard entry={work} locale={locale} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p class="empty">{t.works.empty}</p>
+        )
+      }
     </div>
   </section>
 </BaseLayout>
@@ -79,7 +112,10 @@ const codeCount = works.filter((work) => work.data.type === 'code').length;
     font-family: var(--font-mono);
     font-size: 0.78rem;
     color: var(--text-soft);
-    transition: background 0.25s var(--ease-out), border-color 0.25s var(--ease-out), color 0.25s var(--ease-out);
+    transition:
+      background 0.25s var(--ease-out),
+      border-color 0.25s var(--ease-out),
+      color 0.25s var(--ease-out);
   }
 
   .filter-btn:hover {
@@ -134,4 +170,3 @@ const codeCount = works.filter((work) => work.data.type === 'code').length;
     });
   });
 </script>
-

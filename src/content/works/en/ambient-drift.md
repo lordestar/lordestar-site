@@ -9,4 +9,3 @@ featured: true
 ---
 
 Sample body text. Add real works from the admin panel: upload audio files directly or use external links.
-

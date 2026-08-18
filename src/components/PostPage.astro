@@ -1,20 +1,12 @@
 ---
-import { render } from 'astro:content';
+import { render, type CollectionEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import type { Locale } from '../i18n';
 import { ui } from '../i18n';
 
 interface Props {
   locale: Locale;
-  entry: {
-    id: string;
-    data: {
-      title: string;
-      date: Date;
-      summary: string;
-      tags: string[];
-    };
-  };
+  entry: CollectionEntry<'posts'>;
 }
 
 const { locale, entry } = Astro.props;
@@ -35,9 +27,7 @@ const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
         <h1 class="post-title">{entry.data.title}</h1>
         <div class="post-meta">
           <span>{dateLabel}</span>
-          {entry.data.tags.map((tag) => (
-            <span class="tag">{tag}</span>
-          ))}
+          {entry.data.tags.map((tag) => <span class="tag">{tag}</span>)}
         </div>
       </header>
 
@@ -82,4 +72,3 @@ const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
     padding: 36px;
   }
 </style>
-

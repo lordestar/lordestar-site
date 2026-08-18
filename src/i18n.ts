@@ -39,6 +39,9 @@ export const ui = {
     works: {
       title: '作品',
       subtitle: '音乐与代码，两条互相交织的轨道。',
+      featuredEyebrow: 'featured',
+      featuredTitle: '最近更新',
+      latest: '最新',
       all: '全部',
       music: '音乐',
       code: '代码',
@@ -56,6 +59,10 @@ export const ui = {
     about: {
       title: '关于我',
       subtitle: 'lordestar · 北京交通大学软件工程本科在读',
+      galleryEyebrow: 'gallery',
+      galleryTitle: '一些瞬间',
+      galleryBody: '照片在文字背后缓慢漂移，像记忆一样流动。',
+      photoCaption: 'lordestar · BJTU',
       bioTitle: '我是谁',
       bioBody:
         '一个喜欢音乐、喜欢互联网流行文化的软件工程学生。白天写代码，晚上做点声音实验，偶尔把想法写成文字。',
@@ -68,7 +75,11 @@ export const ui = {
       ],
       timelineTitle: '轨迹',
       timeline: [
-        { date: '2023 - 现在', title: '北京交通大学 · 软件工程', text: '本科在读，探索技术、设计与表达。' },
+        {
+          date: '2023 - 现在',
+          title: '北京交通大学 · 软件工程',
+          text: '本科在读，探索技术、设计与表达。',
+        },
         { date: '更早', title: '开始做音乐与尝试创作', text: '从听歌到做歌，从用软件到写软件。' },
       ],
       toolsTitle: '常出没的地方',
@@ -118,6 +129,9 @@ export const ui = {
     works: {
       title: 'Works',
       subtitle: 'Music and code, two tracks that keep crossing.',
+      featuredEyebrow: 'featured',
+      featuredTitle: 'Latest',
+      latest: 'latest',
       all: 'All',
       music: 'Music',
       code: 'Code',
@@ -135,6 +149,10 @@ export const ui = {
     about: {
       title: 'About me',
       subtitle: 'lordestar · Software engineering undergraduate at BJTU',
+      galleryEyebrow: 'gallery',
+      galleryTitle: 'Moments in between',
+      galleryBody: 'Photos drift behind the words, moving like memory.',
+      photoCaption: 'lordestar · BJTU',
       bioTitle: 'Who I am',
       bioBody:
         'A software engineering student who likes music and internet culture. I write code during the day, experiment with sound at night, and occasionally turn thoughts into words.',
@@ -147,8 +165,16 @@ export const ui = {
       ],
       timelineTitle: 'Trajectory',
       timeline: [
-        { date: '2023 - now', title: 'Beijing Jiaotong University · SE', text: 'Undergraduate, exploring technology, design and expression.' },
-        { date: 'Earlier', title: 'Started making music', text: 'From listening to music to making it, from using software to writing it.' },
+        {
+          date: '2023 - now',
+          title: 'Beijing Jiaotong University · SE',
+          text: 'Undergraduate, exploring technology, design and expression.',
+        },
+        {
+          date: 'Earlier',
+          title: 'Started making music',
+          text: 'From listening to music to making it, from using software to writing it.',
+        },
       ],
       toolsTitle: 'Where I hang out',
       tools: ['GitHub', 'NetEase Cloud Music', 'Bilibili', 'Spotify'],
@@ -166,7 +192,15 @@ export function localeFromId(id: string): Locale {
   return id.startsWith('en/') ? 'en' : 'zh';
 }
 
-export function entriesFor<T extends { id: string }>(entries: T[], locale: Locale): T[] {
-  return entries.filter((entry) => localeFromId(entry.id) === locale);
+export function entriesFor<T extends { id: string; data?: { title?: string | null } }>(
+  entries: T[],
+  locale: Locale,
+): T[] {
+  return entries.filter(
+    (entry) => localeFromId(entry.id) === locale && Boolean(entry.data?.title?.trim()),
+  );
 }
 
+export function slugFromId(id: string): string {
+  return id.replace(/^(zh|en)\//, '').replace(/\.(md|mdx)$/, '');
+}

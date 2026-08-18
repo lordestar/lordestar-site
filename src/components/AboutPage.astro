@@ -1,6 +1,9 @@
 ---
+import { readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from './PageHero.astro';
+import PhotoGalaxy from './PhotoGalaxy.astro';
 import Icon from './Icon.astro';
 import type { Locale } from '../i18n';
 import { ui } from '../i18n';
@@ -11,11 +14,40 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = ui[locale];
-const prefix = locale === 'zh' ? '' : '/en';
+
+const photosDir = fileURLToPath(new URL('../../public/photos', import.meta.url));
+const galaxyImages = (() => {
+  try {
+    return readdirSync(photosDir)
+      .filter((name) => /\.(avif|jpe?g|png|webp)$/i.test(name))
+      .sort()
+      .map((name) => `/photos/${name}`);
+  } catch {
+    return [];
+  }
+})();
+
+const stripImages =
+  galaxyImages.length > 0 ? [0, 3, 6].map((i) => galaxyImages[i % galaxyImages.length]) : [];
+const figureImage = galaxyImages[3] ?? galaxyImages[0] ?? '';
 ---
 
 <BaseLayout locale={locale} title={`${t.about.title} · lordestar`}>
   <PageHero eyebrow="about" title={t.about.title} subtitle={t.about.subtitle} />
+
+  <section class="section galaxy-section">
+    <div class="container">
+      <div class="galaxy-frame glass" data-reveal>
+        <PhotoGalaxy images={galaxyImages} locale={locale}>
+          <div class="galaxy-copy">
+            <span class="eyebrow">{t.about.galleryEyebrow}</span>
+            <h2>{t.about.galleryTitle}</h2>
+            <p>{t.about.galleryBody}</p>
+          </div>
+        </PhotoGalaxy>
+      </div>
+    </div>
+  </section>
 
   <section class="section about-section">
     <div class="container">
@@ -23,8 +55,23 @@ const prefix = locale === 'zh' ? '' : '/en';
         <div class="bio-panel glass-strong" data-reveal>
           <span class="eyebrow">{t.about.bioTitle}</span>
           <p class="bio-text">{t.about.bioBody}</p>
+          {
+            stripImages.length > 0 && (
+              <div class="bio-strip" aria-hidden="true">
+                {stripImages.map((src) => (
+                  <img src={src} alt="" loading="lazy" />
+                ))}
+              </div>
+            )
+          }
           <div class="bio-social">
-            <a class="icon-btn" href="https://github.com/lordestar" target="_blank" rel="noreferrer" aria-label="GitHub">
+            <a
+              class="icon-btn"
+              href="https://github.com/lordestar"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="GitHub"
+            >
               <Icon name="github" size={18} />
             </a>
             <a class="icon-btn" href="mailto:hello@lordestar.dev" aria-label="Email">
@@ -33,40 +80,49 @@ const prefix = locale === 'zh' ? '' : '/en';
           </div>
         </div>
 
-        <div class="facts-panel glass" data-reveal style="--reveal-delay: 90ms">
-          <span class="eyebrow">{t.about.factsTitle}</span>
-          <div class="facts-list">
-            {t.about.facts.map((fact) => (
-              <div class="fact-row">
-                <span class="fact-label">{fact.label}</span>
-                <span class="fact-value">{fact.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        {
+          figureImage && (
+            <div class="bio-figure glass" data-reveal style="--reveal-delay: 90ms">
+              <img src={figureImage} alt="" loading="lazy" />
+              <span class="bio-figure-caption">{t.about.photoCaption}</span>
+              <span class="bio-figure-tag">2026</span>
+            </div>
+          )
+        }
+      </div>
+
+      <div class="facts-grid" data-reveal>
+        {
+          t.about.facts.map((fact) => (
+            <div class="fact-card glass">
+              <span class="fact-label">{fact.label}</span>
+              <span class="fact-value">{fact.value}</span>
+            </div>
+          ))
+        }
       </div>
 
       <div class="timeline-block" data-reveal>
         <span class="eyebrow">{t.about.timelineTitle}</span>
         <div class="timeline">
-          {t.about.timeline.map((item) => (
-            <div class="timeline-item">
-              <span class="timeline-date">{item.date}</span>
-              <div class="timeline-content">
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
+          {
+            t.about.timeline.map((item) => (
+              <div class="timeline-item">
+                <span class="timeline-date">{item.date}</span>
+                <div class="timeline-content">
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          }
         </div>
       </div>
 
       <div class="tools-block" data-reveal>
         <span class="eyebrow">{t.about.toolsTitle}</span>
         <div class="tools-list">
-          {t.about.tools.map((tool) => (
-            <span class="tag tool-tag">{tool}</span>
-          ))}
+          {t.about.tools.map((tool) => <span class="tag tool-tag">{tool}</span>)}
         </div>
       </div>
     </div>
@@ -74,6 +130,39 @@ const prefix = locale === 'zh' ? '' : '/en';
 </BaseLayout>
 
 <style>
+  .galaxy-section {
+    padding-block: 0 96px;
+  }
+
+  .galaxy-frame {
+    position: relative;
+    height: 560px;
+    overflow: hidden;
+  }
+
+  .galaxy-copy {
+    max-width: 560px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+  }
+
+  .galaxy-copy h2 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 680;
+    letter-spacing: 0;
+    line-height: 1.05;
+  }
+
+  .galaxy-copy p {
+    color: var(--text-soft);
+    font-size: 1.02rem;
+  }
+
   .about-section {
     padding-top: 0;
   }
@@ -84,8 +173,7 @@ const prefix = locale === 'zh' ? '' : '/en';
     gap: 20px;
   }
 
-  .bio-panel,
-  .facts-panel {
+  .bio-panel {
     padding: 34px;
     display: flex;
     flex-direction: column;
@@ -98,33 +186,106 @@ const prefix = locale === 'zh' ? '' : '/en';
     max-width: 560px;
   }
 
-  .bio-social {
-    display: flex;
+  .bio-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
     margin-top: auto;
   }
 
-  .facts-list {
+  .bio-strip img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--border-soft);
+    transform: rotate(var(--tilt, 0deg));
+  }
+
+  .bio-strip img:nth-child(1) {
+    --tilt: -2deg;
+  }
+
+  .bio-strip img:nth-child(2) {
+    --tilt: 1.5deg;
+  }
+
+  .bio-strip img:nth-child(3) {
+    --tilt: -1deg;
+  }
+
+  .bio-social {
+    display: flex;
+    gap: 10px;
+  }
+
+  .bio-figure {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    min-height: 360px;
+  }
+
+  .bio-figure img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .bio-figure::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(13, 15, 14, 0.08), rgba(13, 15, 14, 0.62));
+    pointer-events: none;
+  }
+
+  .bio-figure-caption {
+    position: absolute;
+    left: 18px;
+    bottom: 16px;
+    z-index: 2;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+  }
+
+  .bio-figure-tag {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(13, 15, 14, 0.6);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--text-soft);
+  }
+
+  .facts-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-top: 20px;
+  }
+
+  .fact-card {
+    padding: 20px;
     display: flex;
     flex-direction: column;
-  }
-
-  .fact-row {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    padding-block: 14px;
-    border-bottom: 1px solid var(--border-soft);
-  }
-
-  .fact-row:last-child {
-    border-bottom: 0;
+    gap: 10px;
   }
 
   .fact-label {
     font-family: var(--font-mono);
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted);
@@ -132,7 +293,7 @@ const prefix = locale === 'zh' ? '' : '/en';
 
   .fact-value {
     color: var(--text);
-    text-align: right;
+    font-size: 1rem;
   }
 
   .timeline-block,
@@ -202,9 +363,23 @@ const prefix = locale === 'zh' ? '' : '/en';
     color: var(--text-soft);
   }
 
+  @media (max-width: 960px) {
+    .galaxy-frame {
+      height: 460px;
+    }
+
+    .facts-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
   @media (max-width: 860px) {
     .bio-layout {
       grid-template-columns: 1fr;
+    }
+
+    .bio-figure {
+      min-height: 320px;
     }
 
     .timeline-item {
@@ -212,5 +387,14 @@ const prefix = locale === 'zh' ? '' : '/en';
       gap: 6px;
     }
   }
-</style>
 
+  @media (max-width: 520px) {
+    .galaxy-frame {
+      height: 400px;
+    }
+
+    .facts-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

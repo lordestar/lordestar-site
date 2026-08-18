@@ -29,21 +29,27 @@ const posts = entriesFor(allPosts, locale)
   .slice(0, 3);
 ---
 
-<BaseLayout locale={locale} title={`lordestar · ${t.site.tagline}`} description={t.site.description}>
+<BaseLayout
+  locale={locale}
+  title={`lordestar · ${t.site.tagline}`}
+  description={t.site.description}
+>
   <ParticleHero replayLabel={t.hero.replay} scrollLabel={t.hero.scroll} />
 
   <div class="marquee" aria-hidden="true">
     <div class="marquee-track">
-      {[0, 1].map(() => (
-        <span class="marquee-group">
-          {t.home.marquee.map((word) => (
-            <span class="marquee-item">
-              {word}
-              <span class="marquee-sep">✦</span>
-            </span>
-          ))}
-        </span>
-      ))}
+      {
+        [0, 1].map(() => (
+          <span class="marquee-group">
+            {t.home.marquee.map((word) => (
+              <span class="marquee-item">
+                {word}
+                <span class="marquee-sep">✦</span>
+              </span>
+            ))}
+          </span>
+        ))
+      }
     </div>
   </div>
 
@@ -60,12 +66,14 @@ const posts = entriesFor(allPosts, locale)
           </a>
         </div>
         <div class="about-facts">
-          {ui[locale].about.facts.map((fact, index) => (
-            <div class="fact-row" style={`--reveal-delay: ${index * 70}ms`}>
-              <span class="fact-label">{fact.label}</span>
-              <span class="fact-value">{fact.value}</span>
-            </div>
-          ))}
+          {
+            ui[locale].about.facts.map((fact, index) => (
+              <div class="fact-row" style={`--reveal-delay: ${index * 70}ms`}>
+                <span class="fact-label">{fact.label}</span>
+                <span class="fact-value">{fact.value}</span>
+              </div>
+            ))
+          }
         </div>
       </div>
     </div>
@@ -79,17 +87,19 @@ const posts = entriesFor(allPosts, locale)
         ctaHref={`${prefix}/works/`}
         ctaLabel={t.home.worksCta}
       />
-      {works.length > 0 ? (
-        <div class="works-grid">
-          {works.map((work, index) => (
-            <div style={`--reveal-delay: ${(index % 2) * 90}ms`}>
-              <WorkCard entry={work} locale={locale} prefix={prefix} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p class="empty">{t.works.empty}</p>
-      )}
+      {
+        works.length > 0 ? (
+          <div class="works-grid">
+            {works.map((work, index) => (
+              <div style={`--reveal-delay: ${(index % 2) * 90}ms`}>
+                <WorkCard entry={work} locale={locale} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p class="empty">{t.works.empty}</p>
+        )
+      }
     </div>
   </section>
 
@@ -120,17 +130,19 @@ const posts = entriesFor(allPosts, locale)
         ctaHref={`${prefix}/thoughts/`}
         ctaLabel={t.home.thoughtsCta}
       />
-      {posts.length > 0 ? (
-        <div class="posts-grid">
-          {posts.map((post, index) => (
-            <div style={`--reveal-delay: ${index * 80}ms`}>
-              <PostCard entry={post} locale={locale} prefix={prefix} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p class="empty">{t.thoughts.empty}</p>
-      )}
+      {
+        posts.length > 0 ? (
+          <div class="posts-grid">
+            {posts.map((post, index) => (
+              <div style={`--reveal-delay: ${index * 80}ms`}>
+                <PostCard entry={post} locale={locale} prefix={prefix} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p class="empty">{t.thoughts.empty}</p>
+        )
+      }
     </div>
   </section>
 

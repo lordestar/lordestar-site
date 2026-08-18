@@ -10,20 +10,38 @@ const { audio, accent = '#7fc8c0', title } = Astro.props;
 
 <div class="viz" style={`--accent: ${accent}`}>
   <canvas class="viz-canvas" aria-hidden="true"></canvas>
-  {audio && (
-    <>
-      <button class="viz-toggle" type="button" aria-label={title ?? 'Play'}>
-        <svg class="viz-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
-          <polygon points="6 3 20 12 6 21 6 3" />
-        </svg>
-        <svg class="viz-pause" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
-          <rect x="14" y="4" width="4" height="16" rx="1" />
-          <rect x="6" y="4" width="4" height="16" rx="1" />
-        </svg>
-      </button>
-      <audio src={audio} preload="none"></audio>
-    </>
-  )}
+  {
+    audio && (
+      <>
+        <button class="viz-toggle" type="button" aria-label={title ?? 'Play'}>
+          <svg
+            class="viz-play"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            stroke="none"
+            aria-hidden="true"
+          >
+            <polygon points="6 3 20 12 6 21 6 3" />
+          </svg>
+          <svg
+            class="viz-pause"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            stroke="none"
+            aria-hidden="true"
+          >
+            <rect x="14" y="4" width="4" height="16" rx="1" />
+            <rect x="6" y="4" width="4" height="16" rx="1" />
+          </svg>
+        </button>
+        <audio src={audio} preload="none" />
+      </>
+    )
+  }
 </div>
 
 <style>
@@ -58,7 +76,9 @@ const { audio, accent = '#7fc8c0', title } = Astro.props;
     background: color-mix(in srgb, var(--accent) 88%, #000);
     color: #0d0f0e;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-    transition: transform 0.25s var(--ease-out), filter 0.25s var(--ease-out);
+    transition:
+      transform 0.25s var(--ease-out),
+      filter 0.25s var(--ease-out);
   }
 
   .viz-toggle:hover {
@@ -80,6 +100,8 @@ const { audio, accent = '#7fc8c0', title } = Astro.props;
 </style>
 
 <script>
+  // @ts-nocheck
+  // WIP: inline canvas animation; extract to a typed module before adding features.
   const roots = Array.from(document.querySelectorAll<HTMLElement>('.viz'));
 
   for (const root of roots) {
@@ -91,8 +113,7 @@ const { audio, accent = '#7fc8c0', title } = Astro.props;
     const ctx = canvas.getContext('2d');
     if (!ctx) continue;
 
-    const accent =
-      getComputedStyle(root).getPropertyValue('--accent').trim() || '#7fc8c0';
+    const accent = getComputedStyle(root).getPropertyValue('--accent').trim() || '#7fc8c0';
     let width = 0;
     let height = 0;
     let dpr = 1;
@@ -225,4 +246,3 @@ const { audio, accent = '#7fc8c0', title } = Astro.props;
     resize();
   }
 </script>
-

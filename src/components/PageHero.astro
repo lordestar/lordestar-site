@@ -10,11 +10,20 @@ const { eyebrow, title, subtitle } = Astro.props;
 
 <header class="page-hero">
   <div class="container">
-    {eyebrow && <span class="eyebrow" data-reveal>{eyebrow}</span>}
+    {
+      eyebrow && (
+        <span class="eyebrow" data-reveal>
+          {eyebrow}
+        </span>
+      )
+    }
     <h1 data-reveal style="--reveal-delay: 80ms">{title}</h1>
-    {subtitle && (
-      <p class="subtitle" data-reveal style="--reveal-delay: 160ms">{subtitle}</p>
-    )}
+    {
+      subtitle && (
+        <p class="subtitle" data-reveal style="--reveal-delay: 160ms">
+          {subtitle}
+        </p>
+      )
+    }
   </div>
 </header>
-
