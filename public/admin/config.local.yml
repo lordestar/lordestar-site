@@ -4,7 +4,7 @@ backend:
   branch: main
   base_url: https://lordestar.pages.dev/admin/oauth
 
-local_backend: false
+local_backend: true
 
 media_folder: public/uploads
 public_folder: /uploads
