@@ -3,13 +3,24 @@
   "type": "module",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@11.16.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=11.0.0"
+  },
   "scripts": {
-    "dev": "astro dev",
-    "predev": "node scripts/copy-admin.mjs",
-    "build": "astro build",
-    "prebuild": "node scripts/copy-admin.mjs",
-    "preview": "astro preview",
-    "postinstall": "node scripts/copy-admin.mjs"
+    "dev": "node scripts/astro.mjs dev",
+    "predev": "node scripts/copy-admin.mjs local",
+    "build": "node scripts/astro.mjs build",
+    "prebuild": "node scripts/copy-admin.mjs prod",
+    "preview": "node scripts/astro.mjs preview",
+    "dev:admin": "node scripts/dev-admin.mjs",
+    "clean": "node scripts/clean.mjs",
+    "check": "node scripts/astro.mjs check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "ci": "pnpm format:check && pnpm check && pnpm build",
+    "postinstall": "node scripts/copy-admin.mjs prod"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.2",
@@ -23,7 +34,14 @@
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/node": "^26.1.2",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "bun": "^1.3.14",
+    "decap-server": "^3.10.0",
+    "prettier": "^3.9.6",
+    "prettier-plugin-astro": "^0.14.1",
     "typescript": "^5.8.0"
   }
 }

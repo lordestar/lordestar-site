@@ -3,17 +3,21 @@ dist/
 .astro/
 .wrangler/
 .pnpm-store/
+output/
+.playwright-cli/
+.originkit/
+
 .env
 .env.*
 !.env.example
+
 .DS_Store
 Thumbs.db
-npm-debug.log*
-pnpm-debug.log*
-dev-server.log
-dev-server.err.log
-output/
-.playwright-cli/
-preview-server.log
-.originkit/
-.originkit/
+*.log
+
+# Generated admin bundle and config
+public/admin/config.yml
+public/admin/decap-cms.js
+
+# Local CMS media uploads
+public/uploads/

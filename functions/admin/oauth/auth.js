@@ -8,8 +8,5 @@ export async function onRequestGet(context) {
   });
   const state = url.searchParams.get('state');
   if (state) params.set('state', state);
-  return Response.redirect(
-    `https://github.com/login/oauth/authorize?${params.toString()}`,
-    302,
-  );
+  return Response.redirect(`https://github.com/login/oauth/authorize?${params.toString()}`, 302);
 }

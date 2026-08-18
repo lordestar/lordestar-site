@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.astro/
+output/
+.pnpm-store/
+.wrangler/
+.github/
+public/admin/
+public/photos/
+public/uploads/
+src/components/originkit/
+pnpm-lock.yaml
+*.log
+*.yml
+*.yaml

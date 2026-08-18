@@ -1,82 +1,82 @@
 # lordestar
 
-lordestar 的个人网站：音乐作品、代码作品、经历与随想。Astro 静态站 + React 粒子动效 + Decap CMS 可视化后台，中英双语，默认中文。
+lordestar 的个人网站：音乐作品、代码作品、经历与随想。
 
-## 技术栈
+技术栈：Astro 静态站 + React 交互岛 + Tailwind CSS 4 + Decap CMS + Cloudflare Pages，中英双语，默认中文。
 
-- Astro 7 + TypeScript，静态输出到 `dist/`
-- React island：首页 lordestar Pixel Drift 粒子文字
-- Tailwind CSS 4（Originkit 组件扫描 `src/components/originkit`）
-- Decap CMS（`/admin`，内容写入 `src/content/` 的 Markdown）
-- 部署目标：Cloudflare Pages（免费）
-
-## 本地开发
+## 快速开始
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-访问 `http://localhost:4321`。中文为默认语言，英文在 `/en/`。
+打开 `http://localhost:4321`。中文为默认语言，英文在 `/en/`。
 
-拉取/更新 Originkit 组件时需要 `ORIGINKIT_API_KEY` 环境变量，例如：
+需要同时使用内容后台时：
 
 ```bash
-$env:ORIGINKIT_API_KEY="..."
-bunx --bun originkit@latest add pixeldrift
+pnpm dev:admin
 ```
 
-API Key 只用于本机 CLI 运行，不要写入代码或提交到 git（`.originkit/` 已在 `.gitignore`）。
+然后打开 `http://localhost:4321/admin`，走 Decap local backend，保存的内容直接写入 `src/content/`。
+
+## 常用命令
+
+| 命令                | 说明                        |
+| ------------------- | --------------------------- |
+| `pnpm dev`          | 启动 Astro 开发服务器       |
+| `pnpm dev:admin`    | 启动 Astro + Decap 本地后台 |
+| `pnpm build`        | 构建静态站点到 `dist/`      |
+| `pnpm preview`      | 本地预览构建产物            |
+| `pnpm check`        | Astro + TypeScript 类型检查 |
+| `pnpm format`       | 用 Prettier 格式化全部代码  |
+| `pnpm format:check` | 检查格式是否符合规范        |
+| `pnpm clean`        | 清理 `dist/` 与 `.astro/`   |
+| `pnpm ci`           | 本地跑一遍完整质量门禁      |
+
+## 项目状态
+
+项目已上线部署（`https://lordestar.pages.dev`），当前处于上线后的迭代开发阶段。页面骨架、双语路由、内容集合、CMS 后台、Cloudflare 部署和大部分视觉交互已经可用；作品详情页、RSS、Sitemap、测试体系等仍在路线图中。
+
+当前进度和后续计划见 [docs/06-roadmap.md](docs/06-roadmap.md)。
+
+## 文档导航
+
+- [开发文档总览](docs/README.md)
+- [架构与目录说明](docs/01-architecture.md)
+- [本地开发指南](docs/02-development.md)
+- [内容与 CMS 管理](docs/03-content-management.md)
+- [部署与 CI/CD](docs/04-deployment.md)
+- [工程开发规范](docs/05-engineering-standards.md)
+- [开发路线图](docs/06-roadmap.md)
 
 ## 内容管理
 
-后台地址：`/admin`（本地 `pnpm dev` 时也可打开）。
-
-- 作品：`src/content/works/{zh,en}/*.md`，支持上传音频文件（`audio`）或填外部链接（`link`）
+- 后台地址：`/admin`
+- 本地：`pnpm dev:admin`，文件系统模式，无需 GitHub 登录
+- 线上：GitHub OAuth 登录，内容通过提交写入仓库
+- 作品：`src/content/works/{zh,en}/*.md`
 - 随想：`src/content/posts/{zh,en}/*.md`
 - 站点文案：`src/i18n.ts`
 
-Decap CMS 配置在 `public/admin/config.yml`，其中 `repo`、`base_url` 需要在部署后替换为真实值。
+详细说明见 [docs/03-content-management.md](docs/03-content-management.md)。
 
-## 部署到 Cloudflare Pages
+## 部署
 
-1. 在 GitHub 创建仓库 `lordestar-site`，然后把本目录推上去：
+项目通过 GitHub Actions 在推送 `main` 分支后自动部署到 Cloudflare Pages：
 
-   ```bash
-   git remote add origin git@github.com:lordestar/lordestar-site.git
-   git push -u origin main
-   ```
+```bash
+pnpm install --frozen-lockfile
+pnpm check
+pnpm build
+wrangler pages deploy dist --project-name lordestar
+```
 
-2. 注册/登录 Cloudflare，进入 **Workers & Pages** > **Create** > **Pages** > **Connect to Git**，选择该仓库。
+部署配置、OAuth 和 Secrets 说明见 [docs/04-deployment.md](docs/04-deployment.md)。
 
-3. 构建设置：
-   - Framework preset：`Astro`
-   - Build command：`pnpm install --frozen-lockfile && pnpm run build`
-   - Build output directory：`dist`
-   - Node.js version：`22`
-   - Production branch：`main`
+## 相关工具说明
 
-4. 首次构建完成后会得到 `lordestar.pages.dev` 地址，之后每次 push 自动重新部署。
-
-## Decap CMS 后台登录配置
-
-Decap CMS 的 GitHub 登录需要一个 OAuth 服务，推荐部署一个免费 Cloudflare Worker：
-
-本仓库已经把 OAuth 服务实现为 Cloudflare Pages Functions（`functions/admin/oauth/`），部署在同一个 `lordestar.pages.dev` 域名下，不需要额外服务：
-
-1. 在 GitHub 创建 OAuth App：Settings > Developer settings > OAuth Apps > New OAuth App。
-   - Homepage URL：你的站点地址，例如 `https://lordestar.pages.dev`
-   - Authorization callback URL：`https://lordestar.pages.dev/admin/oauth/callback`
-2. 把 `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` 配置为 Pages 项目加密环境变量：
-
-   ```bash
-   wrangler pages secret put GITHUB_CLIENT_ID --project-name lordestar
-   wrangler pages secret put GITHUB_CLIENT_SECRET --project-name lordestar
-   ```
-
-3. 更新 `public/admin/config.yml`：
-   - `repo: lordestar/lordestar-site`
-   - `base_url: https://lordestar.pages.dev/admin/oauth`
-4. 重新部署后访问 `/admin` 即可用 GitHub 登录后台。
-
-`oauth-worker/` 是同一套逻辑的独立 Worker 版本，作为备用方案保留，当前线上使用的是 Pages Functions。
+- Originkit 组件（`src/components/originkit/`）通过 `bunx --bun originkit@latest add pixeldrift` 拉取，需要 `ORIGINKIT_API_KEY`，配置见 `.env.example`
+- `oauth-worker/` 是 Decap OAuth 的独立 Worker 备用方案，线上当前使用 `functions/admin/oauth/`
+- 关于页照片墙自动读取 `public/photos/`，把要展示的照片（jpg/png/webp/avif）放进该目录即可；当前是脚本生成的占位图，可用 `python scripts/generate-photos.py` 重新生成

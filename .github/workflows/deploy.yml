@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
@@ -28,6 +32,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm check
 
       - name: Build site
         run: pnpm run build
