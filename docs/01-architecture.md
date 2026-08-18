@@ -60,6 +60,7 @@ Cloudflare Pages ──► dist/ 静态站点 + functions/ 后台登录
 - 默认语言中文：`/`、`/about/`、`/works/`、`/thoughts/`
 - 英文前缀：`/en/`、`/en/about/`、`/en/works/`、`/en/thoughts/`
 - 文章详情：`/thoughts/:slug/` 与 `/en/thoughts/:slug/`
+- 作品详情：`/works/:slug/` 与 `/en/works/:slug/`
 - 404 页面：`src/pages/404.astro`
 
 文案统一放在 `src/i18n.ts` 的 `ui.zh` / `ui.en` 中，页面组件通过 `ui[locale]` 取文案，禁止把界面文案硬编码进组件。
@@ -83,6 +84,7 @@ Cloudflare Pages ──► dist/ 静态站点 + functions/ 后台登录
 | `DotCutHero.astro`                                    | 作品页点阵动画 Hero | WIP，内联脚本暂用 `@ts-nocheck`       |
 | `FeaturedWorks.tsx` + `liquid/`                       | 作品页液态卡片      | 可用，纯 TS 引擎                      |
 | `PhotoGalaxy.astro`                                   | 关于页照片墙        | 可用，引擎见 `image-galaxy/engine.ts` |
+| `WorkDetailPage.astro`                                | 作品详情页          | 可用，正文/封面/音频/外链             |
 | `MusicVisualizer.astro`                               | 音频可视化播放器    | 可用，内联脚本暂用 `@ts-nocheck`      |
 
 新交互组件应优先写成独立 TS/TSX 模块（参考 `src/components/liquid/` 与 `image-galaxy/`），避免大型内联脚本。

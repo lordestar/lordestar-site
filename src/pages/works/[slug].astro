@@ -1,0 +1,19 @@
+---
+import { getCollection } from 'astro:content';
+import WorkDetailPage from '../../components/WorkDetailPage.astro';
+import { localeFromId, slugFromId } from '../../i18n';
+
+export async function getStaticPaths() {
+  const works = await getCollection('works');
+  return works
+    .filter((work) => localeFromId(work.id) === 'zh' && Boolean(work.data.title?.trim()))
+    .map((work) => ({
+      params: { slug: slugFromId(work.id) },
+      props: { entry: work },
+    }));
+}
+
+const { entry } = Astro.props;
+---
+
+<WorkDetailPage locale="zh" entry={entry} />

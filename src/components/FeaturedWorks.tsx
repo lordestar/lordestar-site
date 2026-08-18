@@ -5,6 +5,7 @@ interface WorkBrief {
   title: string;
   date: string;
   summary: string;
+  href: string;
 }
 
 interface Props {
@@ -61,7 +62,7 @@ function CardBody({
   work: WorkBrief;
 }) {
   return (
-    <div className={`fw-card fw-card-${kind}`}>
+    <a href={work.href} className={`fw-card fw-card-${kind}`} style={{ textDecoration: 'none' }}>
       <div className="fw-card-top">
         <span className="fw-chip">{label}</span>
         <span className="fw-date">{work.date}</span>
@@ -71,7 +72,7 @@ function CardBody({
       <span className="fw-icon" aria-hidden="true">
         {kind === 'music' ? <PlayIcon /> : <ArrowIcon />}
       </span>
-    </div>
+    </a>
   );
 }
 

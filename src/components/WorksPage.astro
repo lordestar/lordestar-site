@@ -6,7 +6,7 @@ import DotCutHero from './DotCutHero.astro';
 import FeaturedWorks from './FeaturedWorks';
 import WorkCard from './WorkCard.astro';
 import type { Locale } from '../i18n';
-import { ui, entriesFor } from '../i18n';
+import { ui, entriesFor, slugFromId } from '../i18n';
 
 interface Props {
   locale: Locale;
@@ -32,6 +32,7 @@ const toBrief = (work: (typeof works)[number] | undefined) =>
         title: work.data.title,
         date: fmtDate(work.data.date),
         summary: work.data.summary,
+        href: `${locale === 'zh' ? '' : '/en'}/works/${slugFromId(work.id)}/`,
       }
     : null;
 

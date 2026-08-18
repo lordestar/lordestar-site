@@ -1,0 +1,180 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import MusicVisualizer from './MusicVisualizer.astro';
+import Icon from './Icon.astro';
+import type { Locale } from '../i18n';
+import { ui } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  entry: CollectionEntry<'works'>;
+}
+
+const { locale, entry } = Astro.props;
+const t = ui[locale];
+const { Content } = await render(entry);
+const { title, type, date, summary, tags, link, audio, cover } = entry.data;
+const accent = type === 'music' ? '#f08a6f' : '#7fc8c0';
+const prefix = locale === 'zh' ? '' : '/en';
+const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+}).format(date);
+---
+
+<BaseLayout locale={locale} title={`${title} · lordestar`} description={summary}>
+  <article class="work-detail">
+    <div class="container">
+      <header class="work-detail-header" data-reveal>
+        <a class="back-link" href={`${prefix}/works/`}>
+          <Icon name="arrow-left" size={15} />
+          {t.works.back}
+        </a>
+        <span class="eyebrow work-detail-type" style={`--accent: ${accent}`}>
+          {t.works[type]}
+        </span>
+        <h1 class="work-detail-title">{title}</h1>
+        <div class="work-detail-meta">
+          <span>{dateLabel}</span>
+          {tags.map((tag) => <span class="tag">{tag}</span>)}
+        </div>
+        {summary && <p class="work-detail-summary">{summary}</p>}
+      </header>
+
+      <div class="work-detail-media" style={`--accent: ${accent}`} data-reveal>
+        {
+          cover ? (
+            <img src={cover} alt={title} loading="lazy" decoding="async" />
+          ) : audio ? (
+            <MusicVisualizer audio={audio} accent={accent} title={title} />
+          ) : (
+            <div class="work-detail-placeholder">
+              <Icon name={type === 'music' ? 'music' : 'code'} size={48} />
+              <span class="work-detail-placeholder-label">{type}</span>
+            </div>
+          )
+        }
+      </div>
+
+      <div class="work-detail-body markdown-body glass-strong" data-reveal>
+        <Content />
+      </div>
+
+      {
+        link && (
+          <footer class="work-detail-footer" data-reveal>
+            <a class="btn" href={link} target="_blank" rel="noreferrer">
+              {t.works.external}
+              <Icon name="external-link" size={15} />
+            </a>
+          </footer>
+        )
+      }
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .work-detail {
+    padding: calc(var(--nav-h) + 64px) 0 40px;
+  }
+
+  .work-detail-header {
+    max-width: 760px;
+    margin-inline: auto;
+    margin-bottom: 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--muted);
+    transition: color 0.2s var(--ease-out);
+  }
+
+  .back-link:hover {
+    color: var(--aqua);
+  }
+
+  .work-detail-type {
+    color: var(--accent);
+  }
+
+  .work-detail-title {
+    font-size: clamp(2rem, 4.4vw, 3.4rem);
+  }
+
+  .work-detail-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  .work-detail-summary {
+    max-width: 620px;
+    color: var(--text-soft);
+    font-size: 1.06rem;
+    line-height: 1.7;
+  }
+
+  .work-detail-media {
+    max-width: 760px;
+    margin-inline: auto;
+    margin-bottom: 32px;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border-soft);
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%),
+      rgba(255, 255, 255, 0.03);
+  }
+
+  .work-detail-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .work-detail-placeholder {
+    height: 100%;
+    display: grid;
+    place-content: center;
+    gap: 12px;
+    color: var(--accent);
+    text-align: center;
+  }
+
+  .work-detail-placeholder-label {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+  }
+
+  .work-detail-body {
+    max-width: 760px;
+    margin-inline: auto;
+    padding: 36px;
+  }
+
+  .work-detail-footer {
+    max-width: 760px;
+    margin: 28px auto 0;
+  }
+</style>

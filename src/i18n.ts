@@ -48,6 +48,7 @@ export const ui = {
       play: '播放',
       pause: '暂停',
       external: '外部链接',
+      back: '返回作品',
       empty: '这个分类还没有作品，之后会补上。',
     },
     thoughts: {
@@ -138,6 +139,7 @@ export const ui = {
       play: 'Play',
       pause: 'Pause',
       external: 'External link',
+      back: 'Back to works',
       empty: 'Nothing in this category yet. Coming soon.',
     },
     thoughts: {

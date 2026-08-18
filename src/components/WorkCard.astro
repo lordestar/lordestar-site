@@ -3,7 +3,7 @@ import type { CollectionEntry } from 'astro:content';
 import Icon from './Icon.astro';
 import MusicVisualizer from './MusicVisualizer.astro';
 import type { Locale } from '../i18n';
-import { ui } from '../i18n';
+import { ui, slugFromId } from '../i18n';
 
 interface Props {
   entry: CollectionEntry<'works'>;
@@ -14,6 +14,8 @@ const { entry, locale } = Astro.props;
 const t = ui[locale];
 const { title, type, date, summary, tags, link, audio, cover } = entry.data;
 const accent = type === 'music' ? '#f08a6f' : '#7fc8c0';
+const prefix = locale === 'zh' ? '' : '/en';
+const detailUrl = `${prefix}/works/${slugFromId(entry.id)}/`;
 const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
   year: 'numeric',
   month: 'short',
@@ -21,7 +23,7 @@ const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
 ---
 
 <article class="work-card glass" data-reveal data-type={type}>
-  <div class="work-media" style={`--accent: ${accent}`}>
+  <a class="work-media" href={detailUrl} style={`--accent: ${accent}`} aria-label={title}>
     {
       cover ? (
         <img src={cover} alt={title} loading="lazy" />
@@ -35,14 +37,16 @@ const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
       )
     }
     <span class="work-type-badge">{type}</span>
-  </div>
+  </a>
 
   <div class="work-body">
     <div class="work-meta">
       <span>{dateLabel}</span>
       {tags.slice(0, 3).map((tag) => <span class="tag">{tag}</span>)}
     </div>
-    <h3>{title}</h3>
+    <h3>
+      <a class="work-title-link" href={detailUrl}>{title}</a>
+    </h3>
     <p>{summary}</p>
     {
       link && (
@@ -65,12 +69,18 @@ const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
 
   .work-media {
     position: relative;
+    display: block;
     aspect-ratio: 16 / 9;
     overflow: hidden;
     border-bottom: 1px solid var(--border-soft);
     background:
       linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
       rgba(255, 255, 255, 0.03);
+    transition: filter 0.25s var(--ease-out);
+  }
+
+  .work-media:hover {
+    filter: brightness(1.08);
   }
 
   .work-media img {
@@ -137,6 +147,15 @@ const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
     font-size: 1.22rem;
     font-weight: 650;
     letter-spacing: 0;
+  }
+
+  .work-title-link {
+    color: inherit;
+    transition: color 0.2s var(--ease-out);
+  }
+
+  .work-title-link:hover {
+    color: var(--accent, var(--aqua));
   }
 
   .work-body p {
