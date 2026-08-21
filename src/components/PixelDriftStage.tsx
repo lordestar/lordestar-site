@@ -9,12 +9,13 @@ interface PixelDriftStageProps {
 
 const config = {
   text: 'lordestar',
-  colors: ['#f5f7fa', '#f08a6f', '#7fc8c0', '#e8c176', '#b7a6f5', '#eda6c3'],
+  colors: ['#ffffff', '#ffffff', '#eef0f3', '#d4d8de', '#b3b9c3', '#8f96a1'],
   mode: 'onEnter' as const,
   replay: true,
   position: 'middle' as const,
   particleSize: 8,
   particleCount: 46,
+  sizeJitter: 0.35,
   mouseEnabled: true,
   mouseRadius: 45,
   mouseForce: 26,

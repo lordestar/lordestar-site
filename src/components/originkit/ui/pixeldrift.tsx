@@ -114,6 +114,7 @@ export default function ParticleText(props: Props) {
     fontSize,
     autoFit,
     transition,
+    sizeJitter,
     style,
   } = props;
 
@@ -145,6 +146,8 @@ export default function ParticleText(props: Props) {
   const mcEnabled = !!mouseEnabled;
   const mcRadius = typeof mouseRadius === 'number' ? mouseRadius : 150;
   const mcForce = typeof mouseForce === 'number' ? mouseForce : 6;
+  // 0 = uniform sizes; 1 = sizes range from 0× to 2× the base size.
+  const jitterAmt = Math.min(0.9, Math.max(0, typeof sizeJitter === 'number' ? sizeJitter : 0));
 
   useEffect(() => {
     const container = containerRef.current;
@@ -170,6 +173,8 @@ export default function ParticleText(props: Props) {
     let repX: Float32Array = new Float32Array(0);
     let repY: Float32Array = new Float32Array(0);
     let cIdx: Uint8Array = new Uint8Array(0);
+    // Per-particle size multiplier (1 = uniform).
+    let sizeJ: Float32Array = new Float32Array(0);
 
     // Mouse-speed + smoothed-position state for the repulsion engine.
     let prevMx = -99999;
@@ -259,6 +264,7 @@ export default function ParticleText(props: Props) {
       const newPx = new Float32Array(allocCount);
       const newPy = new Float32Array(allocCount);
       const newC = new Uint8Array(allocCount);
+      const newSizeJ = new Float32Array(allocCount);
 
       let i = 0;
       let seen = 0;
@@ -283,6 +289,7 @@ export default function ParticleText(props: Props) {
               newPx[i] = rx;
               newPy[i] = ry;
               newC[i] = Math.floor(Math.random() * palette.length);
+              newSizeJ[i] = 1 - jitterAmt + Math.random() * jitterAmt * 2;
               i++;
             }
             seen++;
@@ -300,6 +307,7 @@ export default function ParticleText(props: Props) {
       repX = new Float32Array(allocCount);
       repY = new Float32Array(allocCount);
       cIdx = newC;
+      sizeJ = newSizeJ;
       // Re-sampling = a fresh layout, so replay the formation from spawn.
       formValRef.current = 0;
       lastFrameRef.current = null;
@@ -510,9 +518,10 @@ export default function ParticleText(props: Props) {
 
       const pr = pointerRef.current;
       // Rendered square size, scaled like SVGParticles (~size/4) so the
-      // 1–100 range stays sane instead of drawing 100px blocks.
-      const drawSize = Math.max(1, particleSize / 4);
-      const half = drawSize / 2;
+      // 1–100 range stays sane instead of drawing 100px blocks. Each
+      // particle multiplies the base by its own jitter so the field is
+      // slightly uneven.
+      const baseDraw = Math.max(1, particleSize / 4);
 
       // Ease the formation value toward its target at a rate set by the
       // Transition duration. Because it advances from the CURRENT value,
@@ -627,7 +636,9 @@ export default function ParticleText(props: Props) {
         ctx.fillStyle = palette[b];
         for (let k = 0; k < bucket.length; k++) {
           const i = bucket[k];
-          ctx.fillRect(px[i] - half, py[i] - half, drawSize, drawSize);
+          const sz = Math.max(1, baseDraw * sizeJ[i]);
+          const hf = sz / 2;
+          ctx.fillRect(px[i] - hf, py[i] - hf, sz, sz);
         }
       }
       ctx.globalAlpha = 1;
@@ -687,6 +698,7 @@ export default function ParticleText(props: Props) {
     colorsKey,
     particleSize,
     particleCount,
+    sizeJitter,
     mcEnabled,
     mcRadius,
     mcForce,
@@ -734,6 +746,7 @@ type Props = {
   position: 'above' | 'middle' | 'below';
   particleSize: number;
   particleCount: number;
+  sizeJitter: number;
   mouseEnabled: boolean;
   mouseRadius: number;
   mouseForce: number;
@@ -751,6 +764,7 @@ const COMPONENT_DEFAULTS = {
   position: 'above',
   particleSize: 12,
   particleCount: 50,
+  sizeJitter: 0.35,
   mouseEnabled: true,
   mouseRadius: 50,
   mouseForce: 30,
