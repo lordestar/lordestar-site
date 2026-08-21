@@ -41,14 +41,9 @@ const { eyebrow, title, subtitle, symbol = 'L', variant = 'hero' } = Astro.props
   // @ts-nocheck
   // WIP: inline canvas animation; extract to a typed module before adding features.
   let symbol = 'L';
-  const PALETTES = [
-    ['#f08a6f', '#22130e'],
-    ['#7fc8c0', '#0e2320'],
-    ['#e8c176', '#251b0c'],
-    ['#b7a6f5', '#1b1630'],
-    ['#eda6c3', '#25101a'],
-    ['#8fb9e8', '#101a29'],
-  ];
+  // Monochrome dot matrix: one light-on-dark pair, kept calm so the bar
+  // reads as a single gray field instead of cycling through mixed colors.
+  const PALETTES = [['#e3e6ea', '#141614']];
 
   const SCENES = [
     { kind: 'text', value: symbol, transition: 'wipe', palette: 0, style: 'drift' },
@@ -60,7 +55,7 @@ const { eyebrow, title, subtitle, symbol = 'L', variant = 'hero' } = Astro.props
 
   const HOLD_MS = 2600;
   const MORPH_MS = 700;
-  const COLS = 42;
+  const COLS = 72;
 
   const easeOut = (t) => 1 - Math.pow(1 - t, 3);
   const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -607,7 +602,7 @@ const { eyebrow, title, subtitle, symbol = 'L', variant = 'hero' } = Astro.props
 
   .dotcut-bar {
     position: relative;
-    height: clamp(96px, 13vw, 148px);
+    height: clamp(48px, 7vw, 84px);
     overflow: hidden;
     border-block: 1px solid var(--border-soft);
   }

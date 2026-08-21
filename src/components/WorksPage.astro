@@ -2,7 +2,6 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from './PageHero.astro';
-import DotCutHero from './DotCutHero.astro';
 import FeaturedWorks from './FeaturedWorks';
 import WorkCard from './WorkCard.astro';
 import type { Locale } from '../i18n';
@@ -42,7 +41,6 @@ const latestCode = works.find((work) => work.data.type === 'code');
 
 <BaseLayout locale={locale} title={`${t.works.title} · lordestar`}>
   <PageHero eyebrow="works" title={t.works.title} subtitle={t.works.subtitle} />
-  <DotCutHero variant="bar" symbol="L" />
 
   <section class="section works-section">
     <div class="container">

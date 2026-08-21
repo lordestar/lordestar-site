@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ParticleHero from './ParticleHero.astro';
+import DotCutHero from './DotCutHero.astro';
 import SectionHeading from './SectionHeading.astro';
 import WorkCard from './WorkCard.astro';
 import PostCard from './PostCard.astro';
@@ -36,22 +37,7 @@ const posts = entriesFor(allPosts, locale)
 >
   <ParticleHero replayLabel={t.hero.replay} scrollLabel={t.hero.scroll} />
 
-  <div class="marquee" aria-hidden="true">
-    <div class="marquee-track">
-      {
-        [0, 1].map(() => (
-          <span class="marquee-group">
-            {t.home.marquee.map((word) => (
-              <span class="marquee-item">
-                {word}
-                <span class="marquee-sep">✦</span>
-              </span>
-            ))}
-          </span>
-        ))
-      }
-    </div>
-  </div>
+  <DotCutHero variant="bar" symbol="L" />
 
   <section class="section">
     <div class="container">
@@ -170,46 +156,6 @@ const posts = entriesFor(allPosts, locale)
 </BaseLayout>
 
 <style>
-  .marquee {
-    border-block: 1px solid var(--border-soft);
-    padding-block: 18px;
-    overflow: hidden;
-    background: rgba(255, 255, 255, 0.025);
-  }
-
-  .marquee-track {
-    display: flex;
-    width: max-content;
-    animation: marquee 26s linear infinite;
-  }
-
-  .marquee-group {
-    display: flex;
-  }
-
-  .marquee-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 34px;
-    padding-right: 34px;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .marquee-sep {
-    color: var(--coral);
-    font-size: 0.7rem;
-  }
-
-  @keyframes marquee {
-    to {
-      transform: translateX(-50%);
-    }
-  }
-
   .about-panel {
     display: grid;
     grid-template-columns: 1.4fr 1fr;

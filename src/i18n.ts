@@ -15,7 +15,6 @@ export const ui = {
       scroll: 'SCROLL',
     },
     home: {
-      marquee: ['music', 'code', 'internet culture', 'experiments', 'stories'],
       aboutEyebrow: 'About',
       aboutTitle: '一个在代码与声音之间游走的人',
       aboutBody:
@@ -105,7 +104,6 @@ export const ui = {
       scroll: 'SCROLL',
     },
     home: {
-      marquee: ['music', 'code', 'internet culture', 'experiments', 'stories'],
       aboutEyebrow: 'About',
       aboutTitle: 'Someone who drifts between code and sound',
       aboutBody:
