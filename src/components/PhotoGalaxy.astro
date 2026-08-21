@@ -1,8 +1,14 @@
 ---
 import Icon from './Icon.astro';
 
+interface PhotoItem {
+  src: string;
+  poster?: string;
+  caption?: string;
+}
+
 interface Props {
-  images: string[];
+  images: PhotoItem[];
   locale?: 'zh' | 'en';
 }
 
@@ -16,16 +22,26 @@ const closeLabel = locale === 'zh' ? '关闭' : 'Close';
   <div class="galaxy" data-galaxy>
     <div class="galaxy-scrim"></div>
     {
-      images.map((src, index) => (
+      images.map((item, index) => (
         <figure
           class="galaxy-item"
           data-galaxy-item
+          data-index={index}
+          data-src={item.src}
+          data-caption={item.caption ?? ''}
+          data-poster={item.poster ?? ''}
           style={`width: ${widths[index % widths.length]}%`}
           role="button"
           tabindex="0"
           aria-label={openLabel}
         >
-          <img src={src} alt="" loading="lazy" decoding="async" draggable="false" />
+          <img
+            src={item.poster ?? item.src}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            draggable="false"
+          />
           <span class="galaxy-overlay" aria-hidden="true" />
         </figure>
       ))
@@ -35,6 +51,11 @@ const closeLabel = locale === 'zh' ? '关闭' : 'Close';
     <slot />
   </div>
   <div class="galaxy-viewer" data-galaxy-viewer hidden aria-hidden="true">
+    <span class="viewer-index" aria-hidden="true">
+      <em data-viewer-index>00</em>
+      <i>/</i>
+      <em data-viewer-total>00</em>
+    </span>
     <button class="viewer-close" type="button" data-viewer-close aria-label={closeLabel}>
       <Icon name="close" size={20} />
     </button>
@@ -59,7 +80,10 @@ const closeLabel = locale === 'zh' ? '关闭' : 'Close';
     const viewerImg = viewer?.querySelector<HTMLImageElement>('[data-viewer-img]');
     const viewerCaption = viewer?.querySelector<HTMLElement>('[data-viewer-caption]');
     const viewerClose = viewer?.querySelector<HTMLButtonElement>('[data-viewer-close]');
+    const viewerIndex = viewer?.querySelector<HTMLElement>('[data-viewer-index]');
+    const viewerTotal = viewer?.querySelector<HTMLElement>('[data-viewer-total]');
     let viewerOpen = false;
+    let finishTimer: ReturnType<typeof setTimeout> | null = null;
     let lastFocusedItem: HTMLElement | null = null;
 
     const inViewport = (el: HTMLElement) => {
@@ -67,43 +91,141 @@ const closeLabel = locale === 'zh' ? '关闭' : 'Close';
       return rect.bottom > 0 && rect.top < window.innerHeight;
     };
 
-    const openViewer = (item: HTMLElement) => {
+    // FLIP transition — the enlarged image grows out of the clicked
+    // thumbnail and flies back into it on close (easeOutQuint curve).
+    const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+    const DURATION = 560;
+
+    const openViewer = (item: HTMLElement, index: number) => {
       const img = item.querySelector<HTMLImageElement>('img');
-      const src = img?.getAttribute('src');
-      if (!src || !viewer || !viewerImg) return;
-      const name = decodeURIComponent(src.split('/').pop()?.split('?')[0] ?? '');
-      viewerImg.src = src;
-      viewerImg.alt = img?.alt ?? '';
-      if (viewerCaption) viewerCaption.textContent = name;
-      viewer.hidden = false;
-      viewer.setAttribute('aria-hidden', 'false');
-      viewerOpen = true;
-      lastFocusedItem = item;
-      galaxy.stop();
-      document.documentElement.classList.add('galaxy-viewer-open');
-      viewerClose?.focus();
+      // The preview source is always the full file (animated GIF included);
+      // the thumbnail may show a static poster instead.
+      const src = item.dataset.src ?? img?.getAttribute('src');
+      if (!src || !viewer || !viewerImg || viewerOpen) return;
+      const caption = item.dataset.caption ?? '';
+
+      // Load dimensions from the (lightweight) poster when available — the
+      // animated GIF itself only starts loading once the preview opens.
+      const pre = new Image();
+      pre.src = item.dataset.poster || src;
+      pre.onload = () => {
+        if (!viewer || !viewerImg || viewerOpen) return;
+        const natW = pre.naturalWidth || 1;
+        const natH = pre.naturalHeight || 1;
+        // Keep the enlarged photo comfortably inside the viewport so the
+        // caption below it stays visible — ~half the screen height max.
+        const maxW = Math.min(window.innerWidth * 0.72, 640);
+        const maxH = window.innerHeight * 0.5;
+        const s = Math.min(maxW / natW, maxH / natH, 1);
+        const w = Math.round(natW * s);
+        const h = Math.round(natH * s);
+
+        viewerImg.src = src;
+        viewerImg.alt = caption || img?.alt || '';
+        viewerImg.style.width = `${w}px`;
+        viewerImg.style.height = `${h}px`;
+        if (viewerCaption) viewerCaption.textContent = caption;
+
+        viewer.hidden = false;
+        viewer.setAttribute('aria-hidden', 'false');
+        viewerOpen = true;
+        lastFocusedItem = item;
+        galaxy.stop();
+        if (viewerIndex) viewerIndex.textContent = String(index + 1).padStart(2, '0');
+        if (viewerTotal) viewerTotal.textContent = String(items.length).padStart(2, '0');
+        viewerCaption?.classList.remove('is-visible');
+
+        if (reduced) {
+          viewer.classList.add('is-open');
+          viewerCaption?.classList.add('is-visible');
+          viewerClose?.focus();
+          return;
+        }
+
+        // Start from the thumbnail's on-screen box.
+        const from = item.getBoundingClientRect();
+        const to = viewerImg.getBoundingClientRect();
+        const dx = from.left - to.left;
+        const dy = from.top - to.top;
+        const sx = from.width / to.width;
+        const sy = from.height / to.height;
+        viewerImg.style.transition = 'none';
+        viewerImg.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+        viewerImg.style.opacity = '0';
+        viewer.classList.remove('is-open');
+
+        // Next frame: animate to the centered, full-size position.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (!viewerOpen) return;
+            viewerImg.style.transition = `transform ${DURATION}ms ${EASE}, opacity 360ms ease`;
+            viewerImg.style.transform = 'none';
+            viewerImg.style.opacity = '1';
+            viewer.classList.add('is-open');
+            window.setTimeout(() => viewerCaption?.classList.add('is-visible'), 170);
+          });
+        });
+        viewerClose?.focus();
+      };
+      pre.src = src;
+    };
+
+    const finishClose = () => {
+      if (!viewer || !viewerImg) return;
+      viewer.hidden = true;
+      viewer.setAttribute('aria-hidden', 'true');
+      viewerImg.style.transition = 'none';
+      viewerImg.style.transform = 'none';
+      viewerImg.style.opacity = '1';
+      // Only return focus to the thumbnail if it is still on screen — the
+      // page may have scrolled while the preview was open.
+      if (lastFocusedItem && inViewport(lastFocusedItem)) lastFocusedItem.focus();
+      lastFocusedItem = null;
+      if (!reduced && inViewport(root)) galaxy.start();
     };
 
     const closeViewer = () => {
-      if (!viewer || !viewerOpen) return;
+      if (!viewer || !viewerImg || !viewerOpen) return;
       viewerOpen = false;
-      viewer.hidden = true;
-      viewer.setAttribute('aria-hidden', 'true');
-      document.documentElement.classList.remove('galaxy-viewer-open');
-      if (!reduced && inViewport(root)) galaxy.start();
-      lastFocusedItem?.focus();
+      viewerCaption?.classList.remove('is-visible');
+      if (finishTimer) clearTimeout(finishTimer);
+
+      if (reduced) {
+        viewer.classList.remove('is-open');
+        finishClose();
+        return;
+      }
+
+      const thumbImg = lastFocusedItem?.querySelector<HTMLImageElement>('img');
+      const from = viewerImg.getBoundingClientRect();
+      const to = thumbImg ? thumbImg.getBoundingClientRect() : null;
+      viewer.classList.remove('is-open');
+      if (to && from.width > 0 && from.height > 0) {
+        const dx = to.left - from.left;
+        const dy = to.top - from.top;
+        const sx = to.width / from.width;
+        const sy = to.height / from.height;
+        viewerImg.style.transition = `transform ${Math.round(DURATION * 0.86)}ms ${EASE}, opacity 300ms ease`;
+        viewerImg.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+        viewerImg.style.opacity = '0';
+        finishTimer = setTimeout(finishClose, Math.round(DURATION * 0.86));
+      } else {
+        viewerImg.style.transition = 'opacity 260ms ease';
+        viewerImg.style.opacity = '0';
+        finishTimer = setTimeout(finishClose, 280);
+      }
     };
 
     root.addEventListener('click', (event) => {
       const item = (event.target as HTMLElement).closest<HTMLElement>('[data-galaxy-item]');
-      if (item) openViewer(item);
+      if (item) openViewer(item, Number(item.dataset.index ?? 0));
     });
 
     root.addEventListener('keydown', (event) => {
       const item = (event.target as HTMLElement).closest<HTMLElement>('[data-galaxy-item]');
       if (!item || (event.key !== 'Enter' && event.key !== ' ')) return;
       event.preventDefault();
-      openViewer(item);
+      openViewer(item, Number(item.dataset.index ?? 0));
     });
 
     viewerClose?.addEventListener('click', closeViewer);
@@ -236,25 +358,54 @@ const closeLabel = locale === 'zh' ? '关闭' : 'Close';
     pointer-events: auto;
   }
 
+  /* ── Viewer: shared-element (FLIP) lightbox ───────────────────────
+     The overlay is a fixed, non-scrolling layer: wheel/touch events pass
+     through to the page, so the background keeps scrolling while the
+     enlarged photo stays pinned on screen. */
   .galaxy-viewer {
     position: fixed;
     inset: 0;
     z-index: 120;
-    display: grid;
-    place-items: center;
+    display: flex;
     padding: 24px;
-    background: rgba(8, 10, 9, 0.86);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    background: rgba(6, 8, 7, 0.78);
+    backdrop-filter: blur(22px) saturate(1.1);
+    -webkit-backdrop-filter: blur(22px) saturate(1.1);
+    opacity: 0;
+    transition: opacity 420ms ease;
+  }
+
+  .galaxy-viewer.is-open {
+    opacity: 1;
   }
 
   .galaxy-viewer[hidden] {
     display: none;
   }
 
-  html.galaxy-viewer-open,
-  html.galaxy-viewer-open body {
-    overflow: hidden;
+  .viewer-index {
+    position: fixed;
+    top: 20px;
+    left: 24px;
+    z-index: 1;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 7px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  .viewer-index em {
+    font-style: normal;
+    color: var(--text-soft);
+  }
+
+  .viewer-index i {
+    font-style: normal;
+    opacity: 0.5;
   }
 
   .viewer-close {
@@ -282,46 +433,47 @@ const closeLabel = locale === 'zh' ? '关闭' : 'Close';
   }
 
   .viewer-frame {
-    margin: 0;
-    max-width: min(960px, 94vw);
-    max-height: 88vh;
+    /* margin:auto keeps the content centered while still scrollable when
+       it overflows the viewer */
+    margin: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
-    animation: galaxy-viewer-in 220ms ease-out both;
+    gap: 16px;
   }
 
   .viewer-frame img {
     display: block;
-    max-width: 100%;
-    max-height: 78vh;
+    max-width: 72vw;
+    max-height: 50vh;
     object-fit: contain;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
     background: #000;
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 34px 90px rgba(0, 0, 0, 0.6);
+    will-change: transform, opacity;
   }
 
   .viewer-caption {
-    max-width: 100%;
+    max-width: 76vw;
     overflow-wrap: anywhere;
-    font-size: 0.9rem;
-    color: var(--muted);
-    letter-spacing: 0;
+    font-size: 1rem;
+    color: var(--text-soft);
+    letter-spacing: 0.01em;
     text-align: center;
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(5px);
+    transition:
+      opacity 520ms cubic-bezier(0.22, 1, 0.36, 1) 140ms,
+      transform 520ms cubic-bezier(0.22, 1, 0.36, 1) 140ms,
+      filter 520ms cubic-bezier(0.22, 1, 0.36, 1) 140ms;
   }
 
-  @keyframes galaxy-viewer-in {
-    from {
-      opacity: 0;
-      transform: translateY(10px) scale(0.98);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
+  .viewer-caption.is-visible {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
   }
 
   @media (max-width: 700px) {
@@ -345,8 +497,13 @@ const closeLabel = locale === 'zh' ? '关闭' : 'Close';
       height: 40px;
     }
 
+    .viewer-index {
+      top: 14px;
+      left: 16px;
+    }
+
     .viewer-frame img {
-      max-height: 72vh;
+      max-height: 42vh;
     }
   }
 </style>

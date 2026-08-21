@@ -1,6 +1,6 @@
 ---
 import { readdirSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from './PageHero.astro';
 import PhotoGalaxy from './PhotoGalaxy.astro';
@@ -15,21 +15,50 @@ interface Props {
 const { locale } = Astro.props;
 const t = ui[locale];
 
-const photosDir = fileURLToPath(new URL('../../public/photos', import.meta.url));
+// Resolve against the project root (cwd is stable in dev and build workers,
+// unlike import.meta.url which points into the build worker bundle).
+const photosDir = path.resolve(process.cwd(), 'public/photos');
+
+const photoCaptions: Record<string, { zh: string; en: string }> = {
+  '01-tianjin-coast.jpg': {
+    zh: '天津滨海 · 我最喜欢的照片之一',
+    en: 'Tianjin Binhai — one of my favorite shots',
+  },
+  '02-cc-cat.jpg': { zh: '微信头像 · CC 猫', en: 'WeChat avatar — CC the cat' },
+  '03-painting-study.jpg': { zh: '绘画临摹练习', en: 'Painting study' },
+  '04-sky-kid.jpg': { zh: '光遇 · 我的光崽', en: 'Sky: Children of the Light — my kid' },
+  '05-my-cat.jpg': { zh: '偶遇的小猫', en: 'A cat I ran into' },
+  '06-meme.jpg': { zh: '日常状态', en: 'Daily mood' },
+  '07-choir.jpg': { zh: '学校合唱团', en: 'School choir' },
+  '08-fav-meme.gif': { zh: '最爱用的表情包', en: 'My favorite meme' },
+  '09-my-guitar.jpg': { zh: '我的吉他', en: 'My guitar' },
+  '10-my-university.jpg': { zh: '我的大学', en: 'My university' },
+  '11-my-partner.jpg': { zh: '我的对象（人先欠着）', en: 'My partner (I.O.U.)' },
+  '12-high-school.jpg': { zh: '高中课堂上的一幕', en: 'A moment in high school class' },
+};
+
 const galaxyImages = (() => {
   try {
     return readdirSync(photosDir)
-      .filter((name) => /\.(avif|jpe?g|png|webp)$/i.test(name))
+      .filter((name) => /\.(avif|gif|jpe?g|png|webp)$/i.test(name) && !/-poster\.jpg$/i.test(name))
       .sort()
-      .map((name) => `/photos/${name}`);
+      .map((name) => ({
+        src: `/photos/${name}`,
+        // Animated GIFs use a static first-frame JPG as the gallery
+        // thumbnail; the animation only plays in the preview.
+        poster: /\.gif$/i.test(name)
+          ? `/photos/${name.replace(/\.gif$/i, '-poster.jpg')}`
+          : undefined,
+        caption: photoCaptions[name]?.[locale] ?? '',
+      }));
   } catch {
     return [];
   }
 })();
 
 const stripImages =
-  galaxyImages.length > 0 ? [0, 3, 6].map((i) => galaxyImages[i % galaxyImages.length]) : [];
-const figureImage = galaxyImages[3] ?? galaxyImages[0] ?? '';
+  galaxyImages.length > 0 ? [0, 3, 6].map((i) => galaxyImages[i % galaxyImages.length].src) : [];
+const figureImage = galaxyImages[3]?.src ?? galaxyImages[0]?.src ?? '';
 ---
 
 <BaseLayout locale={locale} title={`${t.about.title} · lordestar`}>
