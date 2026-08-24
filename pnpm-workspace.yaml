@@ -1,6 +1,5 @@
+# pnpm 11 构建设置（allowBuilds 是当前生效的键）
 allowBuilds:
+  bun: true
+  esbuild: true
   workerd: true
-onlyBuiltDependencies:
-  - bun
-  - esbuild
-  - workerd
