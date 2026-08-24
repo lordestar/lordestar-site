@@ -1,0 +1,46 @@
+---
+import AdminLayout from '../../../components/admin/AdminLayout.astro';
+import WorkForm from '../../../components/admin/WorkForm.astro';
+import { constraintMessage, isAuthed, parseWorkForm } from '../../../lib/admin';
+import { createWork, requireDb } from '../../../lib/data';
+
+if (!(await isAuthed(Astro.session))) {
+  return Astro.redirect('/admin/login');
+}
+
+let error: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const parsed = parseWorkForm(await Astro.request.formData());
+  if (!parsed.ok) {
+    error = parsed.error;
+  } else {
+    try {
+      const db = await requireDb();
+      await createWork(db, parsed.value);
+      return Astro.redirect('/admin/works');
+    } catch (err) {
+      error = constraintMessage(err);
+    }
+  }
+}
+---
+
+<AdminLayout title="新建作品">
+  <div class="admin-page-head">
+    <div>
+      <h1>新建作品</h1>
+      <p>保存后前台立即生效</p>
+    </div>
+  </div>
+
+  {
+    error && (
+      <div class="admin-error" style="margin-bottom:16px">
+        {error}
+      </div>
+    )
+  }
+
+  <WorkForm submitLabel="保存作品" />
+</AdminLayout>

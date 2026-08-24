@@ -10,14 +10,20 @@ output/
 .env
 .env.*
 !.env.example
+.dev.vars
+
+# ä¸´æ—¶åå°å¯†ç æ–‡ä»¶ï¼ˆè®°ä½å¯†ç åè¯·åˆ é™¤ï¼‰
+.admin-password.txt
 
 .DS_Store
 Thumbs.db
 *.log
 
-# Generated admin bundle and config
-public/admin/config.yml
-public/admin/decap-cms.js
+# Local DB seed (regenerable via scripts/migrate-content.mjs)
+scripts/seed-data.sql
 
-# Local CMS media uploads
-public/uploads/
+# Generated photos manifest (regenerable via scripts/photos-manifest.mjs)
+src/lib/photos.gen.ts
+
+# ±¾µØ curl ²âÊÔ²ĞÁô
+cookies.txt

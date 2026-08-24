@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import JournalStream from '../components/JournalStream.astro';
+import { getMergedFeed, requireDb } from '../lib/data';
+import type { Locale } from '../i18n';
+import { ui } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = ui[locale];
+
+let feed: Awaited<ReturnType<typeof getMergedFeed>> = [];
+try {
+  feed = await getMergedFeed(await requireDb(), locale);
+} catch {
+  feed = [];
+}
+---
+
+<BaseLayout locale={locale} title={`${t.journal.allTitle} · lordestar`}>
+  <PageHero eyebrow="journal" title={t.journal.allTitle} subtitle={t.journal.allSubtitle} />
+
+  <section class="section journal-section">
+    <div class="container">
+      {
+        feed.length > 0 ? (
+          <JournalStream items={feed} locale={locale} />
+        ) : (
+          <p class="empty">{t.journal.empty}</p>
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .journal-section {
+    padding-top: 0;
+  }
+
+  .empty {
+    color: var(--muted);
+    text-align: center;
+    padding: 60px 0;
+  }
+</style>

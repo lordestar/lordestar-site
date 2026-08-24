@@ -1,27 +1,27 @@
 # 开发路线图
 
+> 2026-02 更新：架构已从纯静态迁移为 SSR + D1（Cloudflare Workers）。本文件聚焦站点功能路线；迁移与手机 App 的整体推进见 [08-project-plan.md](08-project-plan.md)。
+
 ## 1. 当前状态
 
 ### 已完成
 
-- 项目已上线：`https://lordestar.pages.dev`
-- 中英双语静态站，默认中文
-- 首页粒子文字 Hero
-- 作品页点阵 Hero、液态卡片与筛选
-- 关于页照片墙（类型化引擎 `image-galaxy/engine.ts`，自动读取 `public/photos/`）
-- 随想列表与文章详情
-- 作品详情页 `/works/:slug/`（中英双语，渲染 Markdown 正文、封面、音频与外链）
+- **M1 迁移**：SSR（`output: 'server'`）+ Cloudflare Workers + D1 数据库，内容从 Markdown 迁入 `works`/`posts` 表，页面实时读库
+- **M1.5 代理**：`lordestar.pages.dev` 反向代理到 Worker，国内网络可达，新架构已线上可见
+- 中英双语（默认中文），路由 `/` 与 `/en/`
+- 首页粒子文字 Hero、作品页点阵 Hero、液态卡片与筛选
+- 关于页照片墙（`image-galaxy/engine.ts`，自动读取 `public/photos/`）
+- 随想列表与文章详情、作品详情页（Markdown 正文/封面/音频/外链，marked 运行时渲染）
 - 音频可视化播放器
-- Decap CMS 本地与线上后台
-- Cloudflare Pages 自动部署
-- GitHub OAuth（Pages Functions）
-- 工程化基础：类型检查、Prettier、CI、规范文档
+- 工程化基础：类型检查、Prettier、CI（format+check+build）
 
-### 进行中 / 待收尾
+### 进行中 / 阻塞
 
-- 作品内容仍是示例占位，需要替换为真实作品
+- **域名 `lordestar.com`**：已注册，实名审核中 → 接入 Cloudflare 绑定 Worker（阻塞项，见 08-project-plan）
+- GitHub CI 自动部署：需配置 `CLOUDFLARE_API_TOKEN` Secret
+- 作品/文章仍是示例占位，需要替换为真实内容
 - 关于页照片仍是脚本生成的占位图
-- 两个 canvas 组件的内联脚本使用 `@ts-nocheck` 过渡
+- Decap CMS 已随迁移退役，自建后台（M2）待做
 
 ## 2. 优先级路线图
 

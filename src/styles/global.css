@@ -22,7 +22,7 @@
   --font-body: 'PingFang SC', 'Microsoft YaHei', 'Archivo Variable', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
   --radius: 8px;
-  --nav-h: 68px;
+  --nav-h: 0px; /* 顶部导航已移除（2026-08），页面内导航在 footer */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 

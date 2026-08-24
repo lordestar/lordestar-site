@@ -1,19 +1,14 @@
 ---
-import { getCollection } from 'astro:content';
 import PostPage from '../../components/PostPage.astro';
-import { localeFromId, slugFromId } from '../../i18n';
+import { getPostBySlug } from '../../lib/data';
 
-export async function getStaticPaths() {
-  const posts = await getCollection('posts');
-  return posts
-    .filter((post) => localeFromId(post.id) === 'zh' && Boolean(post.data.title?.trim()))
-    .map((post) => ({
-      params: { slug: slugFromId(post.id) },
-      props: { entry: post },
-    }));
+const { slug } = Astro.params;
+const entry = await getPostBySlug('zh', slug ?? '');
+
+if (!entry) {
+  Astro.response.status = 404;
+  return Astro.rewrite('/404');
 }
-
-const { entry } = Astro.props;
 ---
 
 <PostPage locale="zh" entry={entry} />

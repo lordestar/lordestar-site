@@ -1,0 +1,118 @@
+---
+import AdminLayout from '../../components/admin/AdminLayout.astro';
+import { isAuthed } from '../../lib/admin';
+import { deletePost, listAllPosts, requireDb } from '../../lib/data';
+import { slugFromId } from '../../i18n';
+
+if (!(await isAuthed(Astro.session))) {
+  return Astro.redirect('/admin/login');
+}
+
+let error: string | null = null;
+let posts: Awaited<ReturnType<typeof listAllPosts>> = [];
+
+try {
+  const db = await requireDb();
+
+  if (Astro.request.method === 'POST') {
+    const form = await Astro.request.formData();
+    const action = String(form.get('action') ?? '');
+    const id = Number(form.get('id') ?? 0);
+    if (action === 'delete' && id > 0) {
+      await deletePost(db, id);
+      return Astro.redirect('/admin/posts');
+    }
+  }
+
+  posts = await listAllPosts(db);
+} catch (err) {
+  error = (err as Error).message;
+}
+
+const fmtDate = (date: Date) =>
+  new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' }).format(
+    date,
+  );
+---
+
+<AdminLayout title="文章管理">
+  <div class="admin-page-head">
+    <div>
+      <h1>文章（想法）</h1>
+      <p>共 {posts.length} 条</p>
+    </div>
+    <a class="admin-btn" href="/admin/posts/new/" style="height:38px;padding:0 18px">＋ 新建文章</a>
+  </div>
+
+  {
+    error && (
+      <div class="admin-error" style="margin-bottom:16px">
+        {error}
+      </div>
+    )
+  }
+
+  {
+    posts.length === 0 ? (
+      <p class="admin-empty">还没有文章，点右上角"新建文章"开始。</p>
+    ) : (
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>标题</th>
+            <th>语言</th>
+            <th>日期</th>
+            <th style="text-align:right">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {posts.map((post) => (
+            <tr>
+              <td>
+                <a class="title-link" href={`/admin/posts/edit/${post.dbId}/`}>
+                  {post.data.title}
+                </a>
+              </td>
+              <td>
+                <span class:list={['badge', post.id.startsWith('en') && 'badge-en']}>
+                  {post.id.startsWith('en') ? 'EN' : 'ZH'}
+                </span>
+              </td>
+              <td style="color:var(--muted);font-family:var(--font-mono);font-size:0.8rem">
+                {fmtDate(post.data.date)}
+              </td>
+              <td style="text-align:right">
+                <a
+                  class="admin-btn"
+                  href={`/admin/posts/edit/${post.dbId}/`}
+                  style="margin-right:8px"
+                >
+                  编辑
+                </a>
+                <a
+                  class="admin-btn"
+                  href={`/thoughts/${slugFromId(post.id)}/`}
+                  target="_blank"
+                  style="margin-right:8px"
+                >
+                  预览
+                </a>
+                <form
+                  method="post"
+                  style="display:inline"
+                  onsubmit="return confirm('确定删除这篇文章？')"
+                >
+                  <input type="hidden" name="action" value="delete" />
+                  <input type="hidden" name="id" value={post.dbId} />
+                  <button class="admin-btn admin-btn-danger" type="submit">
+                    删除
+                  </button>
+                </form>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+</AdminLayout>

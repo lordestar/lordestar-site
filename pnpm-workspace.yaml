@@ -1,2 +1,5 @@
+allowBuilds:
+  workerd: true
 onlyBuiltDependencies:
   - esbuild
+  - workerd

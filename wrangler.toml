@@ -1,0 +1,24 @@
+name = "lordestar"
+compatibility_date = "2026-08-21"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+
+# ── 自定义域名（Cloudflare zone 中自动建 DNS 记录 + SSL） ────────────────
+routes = [{ pattern = "lordestar.cn", custom_domain = true }]
+
+# ── GitHub 媒体库配置（仓库需 public；写入用 GITHUB_TOKEN 密钥） ──────────
+[vars]
+GITHUB_OWNER = "lordestar"
+GITHUB_REPO = "lordestar-media"
+GITHUB_BRANCH = "main"
+
+# ── D1 数据库 ──────────────────────────────────────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "lordestar-db"
+database_id = "f1f72563-b876-4aff-8162-5197b200e933"
+migrations_dir = "migrations"
+
+# ── KV 媒体元数据（mime 等；文件本体存 GitHub 媒体仓库） ──────────────────
+[[kv_namespaces]]
+binding = "MEDIA_KV"
+id = "36665a1f8e0b4fc8b12145b97d09be06"

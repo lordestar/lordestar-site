@@ -1,0 +1,48 @@
+---
+import AppLayout from '../../../components/app/AppLayout.astro';
+import RecordForm from '../../../components/app/RecordForm.astro';
+import { isAuthed } from '../../../lib/admin';
+import { getDiaryByDbId, requireDb } from '../../../lib/data';
+import { ui } from '../../../i18n';
+
+if (!(await isAuthed(Astro.session))) {
+  return Astro.redirect(`/admin/login?from=${encodeURIComponent(Astro.url.pathname)}`);
+}
+const t = ui.zh;
+
+const { id } = Astro.params;
+const dbId = Number(id ?? 0);
+const entry = dbId ? await getDiaryByDbId(await requireDb(), dbId) : undefined;
+if (!entry) {
+  return Astro.redirect('/app/records/');
+}
+---
+
+<AppLayout locale="zh" title={t.app.edit}>
+  <h1 class="app-page-title">{t.app.edit}</h1>
+  <RecordForm
+    locale="zh"
+    mode="edit"
+    initial={{
+      dbId: entry.dbId,
+      kind: entry.kind,
+      title: entry.title,
+      artist: entry.artist,
+      cover: entry.cover,
+      songUrl: entry.songUrl,
+      note: entry.note,
+      images: entry.images,
+      public: entry.public,
+    }}
+  />
+</AppLayout>
+
+<style>
+  .app-page-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    margin-bottom: 18px;
+  }
+</style>

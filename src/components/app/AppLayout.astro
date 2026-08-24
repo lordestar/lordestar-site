@@ -1,0 +1,230 @@
+---
+import '@fontsource-variable/archivo';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '../../styles/global.css';
+import PwaHead from '../PwaHead.astro';
+import type { Locale } from '../../i18n';
+import { ui } from '../../i18n';
+
+interface Props {
+  locale: Locale;
+  title: string;
+}
+
+const { locale, title } = Astro.props;
+const t = ui[locale];
+const prefix = locale === 'zh' ? '' : '/en';
+---
+
+<!doctype html>
+<html lang={locale === 'zh' ? 'zh-CN' : 'en'}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title} · lordestar</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#0d0f0e" />
+    <PwaHead />
+  </head>
+  <body class="app">
+    <header class="app-bar">
+      <a class="app-brand" href={`${prefix}/`}>lordestar</a>
+      <nav class="app-nav">
+        <a href={`${prefix}/app/new/`}>{t.app.new}</a>
+        <a href={`${prefix}/app/records/`}>{t.app.records}</a>
+        <a href={`${prefix}/`}>{t.app.toSite}</a>
+      </nav>
+    </header>
+    <main class="app-main">
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  body.app {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+
+  .app-bar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: calc(env(safe-area-inset-top, 0px) + 12px) 20px 12px;
+    background: rgba(13, 15, 14, 0.9);
+    border-bottom: 1px solid var(--border-soft);
+    backdrop-filter: blur(16px);
+  }
+
+  .app-brand {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .app-nav {
+    display: flex;
+    gap: 14px;
+  }
+
+  .app-nav a {
+    color: var(--text-soft);
+    font-size: 0.88rem;
+    transition: color 0.2s;
+  }
+
+  .app-nav a:hover {
+    color: var(--aqua);
+  }
+
+  .app-main {
+    max-width: 620px;
+    margin-inline: auto;
+    padding: 22px 20px calc(40px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .app-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .app-field label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  .app-field input[type='text'],
+  .app-field textarea,
+  .app-field select {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font: inherit;
+    font-size: 1rem;
+  }
+
+  .app-field textarea {
+    min-height: 96px;
+    resize: vertical;
+    line-height: 1.6;
+  }
+
+  .app-field input:focus,
+  .app-field textarea:focus {
+    outline: none;
+    border-color: rgba(127, 200, 192, 0.6);
+  }
+
+  .app-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 46px;
+    padding: 0 22px;
+    border-radius: 10px;
+    font-size: 0.98rem;
+    font-weight: 600;
+    background: var(--aqua);
+    color: #10201d;
+    border: 0;
+    cursor: pointer;
+    transition:
+      filter 0.2s,
+      transform 0.2s;
+  }
+
+  .app-btn:hover {
+    filter: brightness(1.08);
+  }
+
+  .app-btn:active {
+    transform: scale(0.98);
+  }
+
+  .app-btn:disabled {
+    opacity: 0.55;
+  }
+
+  .app-btn-ghost {
+    background: transparent;
+    color: var(--text-soft);
+    border: 1px solid var(--border);
+  }
+
+  .app-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .app-tab {
+    flex: 1;
+    height: 42px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-soft);
+    font: inherit;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      color 0.2s,
+      border-color 0.2s;
+  }
+
+  .app-tab.is-active {
+    background: var(--aqua);
+    border-color: transparent;
+    color: #10201d;
+    font-weight: 600;
+  }
+
+  .app-hint {
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+
+  .app-msg {
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    margin-bottom: 14px;
+  }
+
+  .app-msg-error {
+    background: rgba(240, 138, 111, 0.14);
+    border: 1px solid rgba(240, 138, 111, 0.4);
+    color: var(--coral);
+  }
+
+  .app-msg-ok {
+    background: rgba(155, 211, 173, 0.12);
+    border: 1px solid rgba(155, 211, 173, 0.4);
+    color: var(--mint);
+  }
+</style>

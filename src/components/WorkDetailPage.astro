@@ -1,19 +1,19 @@
 ---
-import { render, type CollectionEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import MusicVisualizer from './MusicVisualizer.astro';
 import Icon from './Icon.astro';
+import { renderMarkdown, type WorkItem } from '../lib/data';
 import type { Locale } from '../i18n';
 import { ui } from '../i18n';
 
 interface Props {
   locale: Locale;
-  entry: CollectionEntry<'works'>;
+  entry: WorkItem;
 }
 
 const { locale, entry } = Astro.props;
 const t = ui[locale];
-const { Content } = await render(entry);
+const contentHtml = renderMarkdown(entry.body);
 const { title, type, date, summary, tags, link, audio, cover } = entry.data;
 const accent = type === 'music' ? '#f08a6f' : '#7fc8c0';
 const prefix = locale === 'zh' ? '' : '/en';
@@ -59,7 +59,7 @@ const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
       </div>
 
       <div class="work-detail-body markdown-body glass-strong" data-reveal>
-        <Content />
+        <div set:html={contentHtml} />
       </div>
 
       {

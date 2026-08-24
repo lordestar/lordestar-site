@@ -1,0 +1,76 @@
+---
+import AdminLayout from '../../../../components/admin/AdminLayout.astro';
+import PostForm from '../../../../components/admin/PostForm.astro';
+import { constraintMessage, isAuthed, parsePostForm } from '../../../../lib/admin';
+import {
+  getPostByDbId,
+  requireDb,
+  updatePost,
+  type PostInput,
+  type PostItem,
+} from '../../../../lib/data';
+
+if (!(await isAuthed(Astro.session))) {
+  return Astro.redirect('/admin/login');
+}
+
+const { id } = Astro.params;
+const dbId = Number(id ?? 0);
+const db = await requireDb();
+
+let entry = await getPostByDbId(db, dbId);
+if (!entry) {
+  return Astro.redirect('/admin/posts');
+}
+
+function inputToPost(prev: PostItem, input: PostInput): PostItem {
+  return {
+    id: `${input.locale}/${input.slug}`,
+    dbId: prev.dbId,
+    data: {
+      title: input.title,
+      date: new Date(input.date),
+      summary: input.summary,
+      tags: input.tags,
+      images: prev.data.images,
+    },
+    body: input.body,
+  };
+}
+
+let error: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const parsed = parsePostForm(await Astro.request.formData());
+  if (!parsed.ok) {
+    error = parsed.error;
+  } else {
+    try {
+      await updatePost(db, dbId, parsed.value);
+      return Astro.redirect('/admin/posts');
+    } catch (err) {
+      error = constraintMessage(err);
+      entry = inputToPost(entry, parsed.value);
+    }
+  }
+}
+---
+
+<AdminLayout title="编辑文章">
+  <div class="admin-page-head">
+    <div>
+      <h1>编辑文章</h1>
+      <p>{entry.id}</p>
+    </div>
+  </div>
+
+  {
+    error && (
+      <div class="admin-error" style="margin-bottom:16px">
+        {error}
+      </div>
+    )
+  }
+
+  <PostForm values={entry} submitLabel="保存修改" />
+</AdminLayout>

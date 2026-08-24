@@ -1,0 +1,45 @@
+---
+import AdminLayout from '../../../components/admin/AdminLayout.astro';
+import PostForm from '../../../components/admin/PostForm.astro';
+import { constraintMessage, isAuthed, parsePostForm } from '../../../lib/admin';
+import { createPost, requireDb } from '../../../lib/data';
+
+if (!(await isAuthed(Astro.session))) {
+  return Astro.redirect('/admin/login');
+}
+
+let error: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const parsed = parsePostForm(await Astro.request.formData());
+  if (!parsed.ok) {
+    error = parsed.error;
+  } else {
+    try {
+      await createPost(await requireDb(), parsed.value);
+      return Astro.redirect('/admin/posts');
+    } catch (err) {
+      error = constraintMessage(err);
+    }
+  }
+}
+---
+
+<AdminLayout title="新建文章">
+  <div class="admin-page-head">
+    <div>
+      <h1>新建文章</h1>
+      <p>保存后前台立即生效</p>
+    </div>
+  </div>
+
+  {
+    error && (
+      <div class="admin-error" style="margin-bottom:16px">
+        {error}
+      </div>
+    )
+  }
+
+  <PostForm submitLabel="保存文章" />
+</AdminLayout>

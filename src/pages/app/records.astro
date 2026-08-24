@@ -1,0 +1,238 @@
+---
+import AppLayout from '../../components/app/AppLayout.astro';
+import { isAuthed } from '../../lib/admin';
+import { listAllDiary, requireDb } from '../../lib/data';
+import { ui } from '../../i18n';
+
+if (!(await isAuthed(Astro.session))) {
+  return Astro.redirect(`/admin/login?from=${encodeURIComponent('/app/records/')}`);
+}
+const t = ui.zh;
+
+let records: Awaited<ReturnType<typeof listAllDiary>> = [];
+try {
+  records = await listAllDiary(await requireDb());
+} catch {
+  records = [];
+}
+
+const fmtDate = (date: Date) =>
+  new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' }).format(
+    date,
+  );
+
+const chip = (kind: string) => t.journal.chips[kind as keyof typeof t.journal.chips] ?? kind;
+---
+
+<AppLayout locale="zh" title={t.app.records}>
+  <h1 class="app-page-title">{t.app.records}</h1>
+
+  {
+    records.length === 0 ? (
+      <p class="app-hint">{t.app.empty}</p>
+    ) : (
+      <div id="records" class="records">
+        {records.map((r) => (
+          <div class="record app-card" data-id={r.dbId} data-kind={r.kind}>
+            <div class="record-top">
+              <span class="record-chip">{chip(r.kind)}</span>
+              {r.cover && <img class="record-cover" src={r.cover} alt="" loading="lazy" />}
+              <time class="record-date">{fmtDate(r.createdAt)}</time>
+            </div>
+            <div class="record-body">
+              <h3>{r.title}</h3>
+              {r.artist && <p class="record-artist">{r.artist}</p>}
+              {r.note && <p class="record-note">{r.note}</p>}
+              {r.images.length > 0 && (
+                <div class="record-imgs">
+                  {r.images.map((src) => (
+                    <img src={src} alt="" loading="lazy" />
+                  ))}
+                </div>
+              )}
+            </div>
+            <div class="record-actions">
+              <label class="record-public">
+                <input type="checkbox" data-act="toggle" checked={r.public} />
+                <span>{t.app.public}</span>
+              </label>
+              <a
+                class="app-btn app-btn-ghost"
+                style="height:36px;font-size:0.85rem"
+                href={`/app/edit/${r.dbId}/`}
+              >
+                {t.app.edit}
+              </a>
+              <button
+                class="app-btn app-btn-ghost"
+                style="height:36px;font-size:0.85rem;color:var(--coral)"
+                type="button"
+                data-act="del"
+              >
+                {t.app.del}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+</AppLayout>
+
+<script>
+  const root = document.querySelector<HTMLElement>('#records');
+  if (root) {
+    root.addEventListener('click', async (event) => {
+      const btn = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-act]');
+      if (!btn) return;
+      const card = btn.closest<HTMLElement>('.record');
+      const id = card?.dataset.id;
+      if (!id) return;
+      if (btn.dataset.act === 'del') {
+        if (!confirm('确定删除这条记录？')) return;
+        const resp = await fetch(`/api/diary/${id}`, { method: 'DELETE' });
+        if (resp.ok) card?.remove();
+      }
+    });
+
+    root.addEventListener('change', async (event) => {
+      const input = (event.target as HTMLElement).closest<HTMLInputElement>(
+        'input[data-act="toggle"]',
+      );
+      if (!input) return;
+      const card = input.closest<HTMLElement>('.record');
+      const id = card?.dataset.id;
+      const kind = card?.dataset.kind;
+      if (!id) return;
+      // 读取现有字段，仅改 public
+      const title = card?.querySelector('h3')?.textContent ?? '';
+      const note = card?.querySelector('.record-note')?.textContent ?? '';
+      const artist = card?.querySelector('.record-artist')?.textContent ?? '';
+      const cover = card?.querySelector('.record-cover')?.getAttribute('src') ?? '';
+      const images = Array.from(
+        card?.querySelectorAll<HTMLImageElement>('.record-imgs img') ?? [],
+      ).map((img) => img.src);
+      const songUrl = card?.querySelector('a[data-song-url]')?.getAttribute('href') ?? '';
+      const resp = await fetch(`/api/diary/${id}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          kind: kind === 'photo' ? 'photo' : kind === 'text' ? 'text' : 'song',
+          title,
+          artist,
+          cover,
+          songUrl,
+          note,
+          images,
+          public: input.checked,
+        }),
+      });
+      if (!resp.ok) {
+        input.checked = !input.checked;
+      }
+    });
+  }
+</script>
+
+<style>
+  .app-page-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    margin-bottom: 18px;
+  }
+
+  .records {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .record-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .record-chip {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+  }
+
+  .record-cover {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+
+  .record-date {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .record-body h3 {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 650;
+    letter-spacing: 0;
+    margin-top: 10px;
+  }
+
+  .record-artist {
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    margin-top: 2px;
+  }
+
+  .record-note {
+    color: var(--muted);
+    font-size: 0.92rem;
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+
+  .record-imgs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .record-imgs img {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  .record-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .record-public {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    margin-right: auto;
+  }
+
+  .record-public input {
+    accent-color: var(--aqua);
+  }
+</style>

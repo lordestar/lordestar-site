@@ -3,8 +3,8 @@ import '@fontsource-variable/archivo';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
 import '../styles/global.css';
-import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
+import PwaHead from '../components/PwaHead.astro';
 import type { Locale } from '../i18n';
 import { ui } from '../i18n';
 
@@ -32,13 +32,14 @@ const prefix = locale === 'zh' ? '' : '/en';
     <meta property="og:description" content={description ?? t.site.description} />
     <meta property="og:type" content="website" />
     <meta name="theme-color" content="#0d0f0e" />
+    <PwaHead />
   </head>
   <body>
-    <Nav locale={locale} prefix={prefix} />
     <main id="main">
       <slot />
     </main>
     <Footer locale={locale} prefix={prefix} />
+    <a class="fab" href="/app/new/" aria-label="记一笔" title="记一笔">✎</a>
     <script>
       const revealEls = document.querySelectorAll('[data-reveal]');
       if ('IntersectionObserver' in window) {
@@ -58,5 +59,38 @@ const prefix = locale === 'zh' ? '' : '/en';
         revealEls.forEach((el) => el.classList.add('is-visible'));
       }
     </script>
+    <style>
+      .fab {
+        position: fixed;
+        right: 20px;
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        z-index: 40;
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: var(--aqua);
+        color: #10201d;
+        display: grid;
+        place-items: center;
+        font-size: 1.35rem;
+        font-weight: 700;
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42);
+        transition:
+          transform 0.2s var(--ease-out),
+          filter 0.2s;
+      }
+
+      .fab:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.08);
+      }
+
+      @media (min-width: 900px) {
+        .fab {
+          width: 58px;
+          height: 58px;
+        }
+      }
+    </style>
   </body>
 </html>

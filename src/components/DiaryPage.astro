@@ -1,0 +1,239 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from './PageHero.astro';
+import { listPublicDiary, requireDb } from '../lib/data';
+import type { Locale } from '../i18n';
+import { ui } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = ui[locale];
+
+let entries: Awaited<ReturnType<typeof listPublicDiary>> = [];
+try {
+  entries = await listPublicDiary(await requireDb(), { kind: 'song' });
+} catch {
+  entries = [];
+}
+
+// 按"年月"分组（新→旧）
+const monthKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}`;
+const groups: { key: string; title: string; items: (typeof entries)[number][] }[] = [];
+for (const entry of entries) {
+  const key = monthKey(entry.createdAt);
+  let group = groups.find((g) => g.key === key);
+  if (!group) {
+    group = {
+      key,
+      title: new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+        year: 'numeric',
+        month: 'long',
+      }).format(entry.createdAt),
+      items: [],
+    };
+    groups.push(group);
+  }
+  group.items.push(entry);
+}
+
+const weekdayLabel = (date: Date) =>
+  new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', { weekday: 'short' }).format(date);
+---
+
+<BaseLayout locale={locale} title={`${t.diary.title} · lordestar`}>
+  <PageHero eyebrow="diary" title={t.diary.title} subtitle={t.diary.subtitle} />
+
+  <section class="section diary-section">
+    <div class="container">
+      {
+        groups.length > 0 ? (
+          <div class="calendar">
+            {groups.map((group, gi) => (
+              <div class="month" data-reveal style={`--reveal-delay: ${Math.min(gi, 4) * 60}ms`}>
+                <h2 class="month-title">{group.title}</h2>
+                <div class="day-grid">
+                  {group.items.map((entry) => (
+                    <a
+                      class="day-card"
+                      href={entry.songUrl || '#'}
+                      target={entry.songUrl ? '_blank' : undefined}
+                      rel="noreferrer"
+                      aria-label={`${entry.title} - ${entry.artist}`}
+                    >
+                      <span class="day-head">
+                        <span class="day-num">{entry.createdAt.getDate()}</span>
+                        <span class="day-week">{weekdayLabel(entry.createdAt)}</span>
+                      </span>
+                      <span class="day-cover">
+                        {entry.cover ? (
+                          <img src={entry.cover} alt="" loading="lazy" />
+                        ) : (
+                          <span class="day-cover-placeholder">♪</span>
+                        )}
+                      </span>
+                      <span class="day-meta">
+                        <span class="day-title">{entry.title}</span>
+                        <span class="day-artist">{entry.artist}</span>
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p class="empty">{t.diary.empty}</p>
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .diary-section {
+    padding-top: 0;
+  }
+
+  .calendar {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .month-title {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 680;
+    letter-spacing: 0;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  .day-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    gap: 14px;
+  }
+
+  /* 日历格子：像撕下来的日历页 */
+  .day-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: linear-gradient(170deg, #f8f4e9 0%, #efe9da 100%);
+    border-radius: 4px;
+    box-shadow:
+      0 10px 22px rgba(0, 0, 0, 0.32),
+      inset 0 0 0 1px rgba(120, 108, 84, 0.15);
+    transform: rotate(var(--tilt, 0deg));
+    transition:
+      transform 0.25s var(--ease-out),
+      box-shadow 0.25s var(--ease-out);
+  }
+
+  .day-card:nth-child(3n + 1) {
+    --tilt: -0.5deg;
+  }
+
+  .day-card:nth-child(3n + 2) {
+    --tilt: 0.4deg;
+  }
+
+  .day-card:nth-child(3n) {
+    --tilt: -0.3deg;
+  }
+
+  .day-card:hover {
+    transform: rotate(0deg) translateY(-3px);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .day-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .day-num {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #3a3326;
+    line-height: 1;
+  }
+
+  .day-week {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    color: rgba(90, 78, 58, 0.75);
+  }
+
+  .day-cover {
+    display: block;
+    aspect-ratio: 1 / 1;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(60, 50, 32, 0.18);
+    background: radial-gradient(circle at 50% 45%, #3a4a5c, #1b2530 70%), #2b3949;
+  }
+
+  .day-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s var(--ease-out);
+  }
+
+  .day-card:hover .day-cover img {
+    transform: scale(1.06);
+  }
+
+  .day-cover-placeholder {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    font-size: 1.8rem;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .day-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .day-title {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 650;
+    letter-spacing: 0;
+    color: #3a3326;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .day-artist {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: rgba(90, 78, 58, 0.75);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .empty {
+    color: var(--muted);
+    text-align: center;
+    padding: 60px 0;
+  }
+</style>

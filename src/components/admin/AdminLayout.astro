@@ -1,0 +1,321 @@
+---
+import '@fontsource-variable/archivo';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '../../styles/global.css';
+import PwaHead from '../PwaHead.astro';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · lordestar 后台</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#0d0f0e" />
+    <PwaHead />
+  </head>
+  <body class="admin">
+    <header class="admin-nav">
+      <div class="admin-nav-inner">
+        <a class="admin-brand" href="/admin/">lordestar 后台</a>
+        <nav class="admin-links">
+          <a href="/admin/works/">作品</a>
+          <a href="/admin/posts/">文章</a>
+        </nav>
+        <div class="admin-actions">
+          <a class="admin-btn" href="/" target="_blank">查看网站 ↗</a>
+          <form method="post" action="/admin/logout">
+            <button class="admin-btn admin-btn-danger" type="submit">退出</button>
+          </form>
+        </div>
+      </div>
+    </header>
+    <main class="admin-main">
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  body.admin {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+
+  .admin-nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(13, 15, 14, 0.92);
+    border-bottom: 1px solid var(--border-soft);
+    backdrop-filter: blur(16px);
+  }
+
+  .admin-nav-inner {
+    max-width: 1080px;
+    margin-inline: auto;
+    padding: 0 20px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .admin-brand {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text);
+  }
+
+  .admin-links {
+    display: flex;
+    gap: 16px;
+    flex: 1;
+  }
+
+  .admin-links a {
+    color: var(--text-soft);
+    font-size: 0.92rem;
+    padding: 6px 4px;
+    border-bottom: 2px solid transparent;
+    transition:
+      color 0.2s,
+      border-color 0.2s;
+  }
+
+  .admin-links a:hover {
+    color: var(--aqua);
+    border-color: var(--aqua);
+  }
+
+  .admin-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .admin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text-soft);
+    font-size: 0.82rem;
+    font-family: var(--font-mono);
+    transition:
+      background 0.2s,
+      border-color 0.2s,
+      color 0.2s;
+  }
+
+  .admin-btn:hover {
+    border-color: rgba(127, 200, 192, 0.5);
+    color: var(--aqua);
+  }
+
+  .admin-btn-danger:hover {
+    border-color: rgba(240, 138, 111, 0.6);
+    color: var(--coral);
+  }
+
+  .admin-main {
+    max-width: 1080px;
+    margin-inline: auto;
+    padding: 28px 20px 80px;
+  }
+
+  .admin-page-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .admin-page-head h1 {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  .admin-page-head p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 4px;
+  }
+
+  /* 表格 */
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    font-size: 0.9rem;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    text-align: left;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .admin-table th {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .admin-table tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .admin-table a.title-link {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .admin-table a.title-link:hover {
+    color: var(--aqua);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .badge-en {
+    color: var(--sky);
+    border-color: rgba(143, 185, 232, 0.4);
+  }
+
+  .badge-featured {
+    color: var(--amber);
+    border-color: rgba(232, 193, 118, 0.4);
+  }
+
+  /* 表单 */
+  .admin-form {
+    max-width: 760px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .admin-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .admin-field label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  .admin-field input[type='text'],
+  .admin-field input[type='date'],
+  .admin-field select,
+  .admin-field textarea {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    color: var(--text);
+    font: inherit;
+    font-size: 0.95rem;
+    width: 100%;
+  }
+
+  .admin-field textarea {
+    min-height: 220px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    resize: vertical;
+  }
+
+  .admin-field input:focus,
+  .admin-field select:focus,
+  .admin-field textarea:focus {
+    outline: none;
+    border-color: rgba(127, 200, 192, 0.6);
+  }
+
+  .admin-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .admin-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--text-soft);
+  }
+
+  .admin-check input {
+    accent-color: var(--aqua);
+  }
+
+  .admin-error {
+    background: rgba(240, 138, 111, 0.12);
+    border: 1px solid rgba(240, 138, 111, 0.4);
+    color: var(--coral);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 0.88rem;
+  }
+
+  .admin-note {
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .admin-empty {
+    color: var(--muted);
+    padding: 30px 0;
+  }
+
+  .upload-hint {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 640px) {
+    .admin-row {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

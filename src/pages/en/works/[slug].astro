@@ -1,19 +1,14 @@
 ---
-import { getCollection } from 'astro:content';
 import WorkDetailPage from '../../../components/WorkDetailPage.astro';
-import { localeFromId, slugFromId } from '../../../i18n';
+import { getWorkBySlug } from '../../../lib/data';
 
-export async function getStaticPaths() {
-  const works = await getCollection('works');
-  return works
-    .filter((work) => localeFromId(work.id) === 'en' && Boolean(work.data.title?.trim()))
-    .map((work) => ({
-      params: { slug: slugFromId(work.id) },
-      props: { entry: work },
-    }));
+const { slug } = Astro.params;
+const entry = await getWorkBySlug('en', slug ?? '');
+
+if (!entry) {
+  Astro.response.status = 404;
+  return Astro.rewrite('/404');
 }
-
-const { entry } = Astro.props;
 ---
 
 <WorkDetailPage locale="en" entry={entry} />

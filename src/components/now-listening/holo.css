@@ -1,0 +1,335 @@
+/* ── "最近在听"Holo 全息卡 ───────────────────────────────────────────────
+   引擎（engine.ts）只写 CSS 变量；本文件把变量翻译成视觉。
+   变量契约：
+     静态  --tile-src / --body-grad / --tile-dark / --tile-light / --glare-o
+           --l1..3-{img,size,bgblend,blend,filter,o}
+     逐帧  --rx / --ry / --l1..3-{x,y} / --gx / --gy / --tile-x
+           --spot / --breath / --tile-invert / --tile-hue / --tile-sweep-angle
+           --speed / --smear / --smear-angle / --emboss-x / --emboss-y
+           --edge-l/r/t/b
+   灰白打印面 + 全息箔片 + 专辑封面瓦片（倾斜翻转双色调）。 */
+
+.nl-holo-host {
+  display: block;
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+  aspect-ratio: 1344 / 620;
+  perspective: 1100px;
+  border-radius: 14px;
+  /* 底部投影（玻璃拟态风格） */
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
+}
+
+.nl-holo-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1344 / 620;
+  border-radius: 14px;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  will-change: transform;
+}
+
+/* 打印面：固定灰白渐变，永不变化 */
+.nl-holo-body {
+  position: absolute;
+  inset: 0;
+  background: var(--body-grad, linear-gradient(115deg, #f6f7f9, #eaecef));
+  border-radius: inherit;
+}
+
+/* ── 全息箔片：三个通用槽位，全部由材质变量驱动 ── */
+.nl-holo-foil,
+.nl-holo-foil--b,
+.nl-holo-foil--c {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.nl-holo-foil {
+  background-image: var(--l1-img, none);
+  background-size: var(--l1-size, auto);
+  background-position: var(--l1-x, 50%) var(--l1-y, 50%);
+  background-blend-mode: var(--l1-bgblend, normal);
+  mix-blend-mode: var(--l1-blend, normal);
+  filter: var(--l1-filter, none);
+  opacity: var(--l1-o, 0);
+}
+
+.nl-holo-foil--b {
+  background-image: var(--l2-img, none);
+  background-size: var(--l2-size, auto);
+  background-position: var(--l2-x, 50%) var(--l2-y, 50%);
+  background-blend-mode: var(--l2-bgblend, normal);
+  mix-blend-mode: var(--l2-blend, normal);
+  filter: var(--l2-filter, none);
+  opacity: var(--l2-o, 0);
+}
+
+.nl-holo-foil--c {
+  background-image: var(--l3-img, none);
+  background-size: var(--l3-size, auto);
+  background-position: var(--l3-x, 50%) var(--l3-y, 50%);
+  background-blend-mode: var(--l3-bgblend, normal);
+  mix-blend-mode: var(--l3-blend, normal);
+  filter: var(--l3-filter, none);
+  opacity: var(--l3-o, 0);
+}
+
+/* 速度拖影：沿运动方向拉长的高光 */
+.nl-holo-smear {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    var(--smear-angle, 0deg),
+    rgba(255, 255, 255, 0) 38%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0) 62%
+  );
+  opacity: var(--smear, 0);
+  mix-blend-mode: screen;
+}
+
+/* 甜点：固定偏心高光点，倾斜到该角度时整体提亮 */
+.nl-holo-spot {
+  position: absolute;
+  inset: -40%;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side circle at 32% 34%,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0)
+  );
+  opacity: var(--spot, 0);
+  mix-blend-mode: screen;
+}
+
+/* 噪点：打破平整渐变，让卡片像印刷面 */
+.nl-holo-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E");
+  opacity: 0.05;
+}
+
+/* 眩光：跟随指针的高光 */
+.nl-holo-glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--gx, 50%) var(--gy, 50%),
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0) 55%
+  );
+  opacity: var(--glare-o, 0);
+  mix-blend-mode: screen;
+}
+
+/* 顶部反光 */
+.nl-holo-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 42%);
+  opacity: 0.5;
+}
+
+/* 四边独立受光（厚度感） */
+.nl-holo-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset calc(var(--edge-l, 0) * 2px) 0 3px -1px rgba(255, 255, 255, 0.65),
+    inset calc(var(--edge-r, 0) * -2px) 0 3px -1px rgba(255, 255, 255, 0.65),
+    inset 0 calc(var(--edge-t, 0) * 2px) 3px -1px rgba(255, 255, 255, 0.65),
+    inset 0 calc(var(--edge-b, 0) * -2px) 3px -1px rgba(255, 255, 255, 0.65);
+}
+
+/* ── 内容（在箔片之上，浅色面配深色文字） ── */
+.nl-holo-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: clamp(16px, 4%, 30px);
+  border-radius: inherit;
+}
+
+.nl-holo-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.nl-holo-label {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: clamp(0.58rem, 1.2vw, 0.72rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #4a5560;
+  padding: 3px 9px;
+  border: 1px solid rgba(74, 85, 96, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+  margin-bottom: 5px;
+}
+
+.nl-holo-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 3.2vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.1;
+  color: #1c2229;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow:
+    calc(var(--emboss-x, 0px) * 1) calc(var(--emboss-y, 0px) * 1) 0 rgba(255, 255, 255, 0.75),
+    calc(var(--emboss-x, 0px) * -1) calc(var(--emboss-y, 0px) * -1) 0 rgba(28, 34, 41, 0.28);
+}
+
+.nl-holo-artist {
+  font-family: var(--font-mono);
+  font-size: clamp(0.7rem, 1.6vw, 0.95rem);
+  letter-spacing: 0.05em;
+  color: #4a5560;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow:
+    calc(var(--emboss-x, 0px) * 0.7) calc(var(--emboss-y, 0px) * 0.7) 0 rgba(255, 255, 255, 0.6),
+    calc(var(--emboss-x, 0px) * -0.7) calc(var(--emboss-y, 0px) * -0.7) 0 rgba(28, 34, 41, 0.2);
+}
+
+.nl-holo-date {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7681;
+  margin-top: 2px;
+}
+
+/* ── 封面瓦片：双色调 + 倾斜翻转 ── */
+.nl-holo-tile {
+  position: relative;
+  flex-shrink: 0;
+  width: clamp(84px, 24%, 150px);
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(28, 34, 41, 0.14);
+  box-shadow:
+    0 10px 24px rgba(28, 34, 41, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.nl-holo-tile__photo,
+.nl-holo-tile__photo--neg {
+  position: absolute;
+  inset: 0;
+  background-image: var(--tile-src, none);
+  background-size: cover;
+  background-position: var(--tile-x, 50%) 50%;
+}
+
+/* 反向片：色相翻转 + 扫描遮罩，倾斜时扫入 */
+.nl-holo-tile__photo--neg {
+  filter: hue-rotate(var(--tile-hue, 150deg)) invert(0.92) saturate(0.55) contrast(1.06);
+  -webkit-mask-image: linear-gradient(
+    var(--tile-sweep-angle, 90deg),
+    transparent 0%,
+    transparent 46%,
+    #000 54%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    var(--tile-sweep-angle, 90deg),
+    transparent 0%,
+    transparent 46%,
+    #000 54%,
+    #000 100%
+  );
+  opacity: var(--tile-invert, 0);
+}
+
+/* 双色调着色 */
+.nl-holo-tile__duo {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--tile-dark, #3a4a5c), var(--tile-light, #eef2f6));
+  mix-blend-mode: overlay;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.nl-holo-tile__tone {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(28, 34, 41, 0.18));
+  pointer-events: none;
+}
+
+/* 瓦片上的极淡全息反光 */
+.nl-holo-tile__foil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.35) 46%,
+    rgba(176, 196, 222, 0.25) 52%,
+    rgba(255, 255, 255, 0) 68%
+  );
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.nl-holo-tile__grain {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E");
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.nl-holo-tile__vignette {
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 18px rgba(28, 34, 41, 0.35);
+  pointer-events: none;
+}
+
+.nl-holo-tile__gloss {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    130deg,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0.4) 52%,
+    rgba(255, 255, 255, 0) 64%
+  );
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nl-holo-card {
+    transform: none;
+  }
+}

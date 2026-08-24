@@ -1,0 +1,81 @@
+---
+import AdminLayout from '../../../../components/admin/AdminLayout.astro';
+import WorkForm from '../../../../components/admin/WorkForm.astro';
+import { constraintMessage, isAuthed, parseWorkForm } from '../../../../lib/admin';
+import {
+  getWorkByDbId,
+  requireDb,
+  updateWork,
+  type WorkInput,
+  type WorkItem,
+} from '../../../../lib/data';
+
+if (!(await isAuthed(Astro.session))) {
+  return Astro.redirect('/admin/login');
+}
+
+const { id } = Astro.params;
+const dbId = Number(id ?? 0);
+const db = await requireDb();
+
+let entry = await getWorkByDbId(db, dbId);
+if (!entry) {
+  return Astro.redirect('/admin/works');
+}
+
+/** 校验/保存失败时，把用户提交的数据转回表单初始值，避免输入丢失。 */
+function inputToWork(prev: WorkItem, input: WorkInput): WorkItem {
+  return {
+    id: `${input.locale}/${input.slug}`,
+    dbId: prev.dbId,
+    data: {
+      title: input.title,
+      type: input.type,
+      date: new Date(input.date),
+      summary: input.summary,
+      tags: input.tags,
+      link: input.link,
+      audio: input.audio,
+      cover: input.cover,
+      featured: input.featured,
+    },
+    body: input.body,
+  };
+}
+
+let error: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const parsed = parseWorkForm(await Astro.request.formData());
+  if (!parsed.ok) {
+    error = parsed.error;
+  } else {
+    try {
+      await updateWork(db, dbId, parsed.value);
+      return Astro.redirect('/admin/works');
+    } catch (err) {
+      error = constraintMessage(err);
+      entry = inputToWork(entry, parsed.value);
+    }
+  }
+}
+---
+
+<AdminLayout title="编辑作品">
+  <div class="admin-page-head">
+    <div>
+      <h1>编辑作品</h1>
+      <p>{entry.id}</p>
+    </div>
+  </div>
+
+  {
+    error && (
+      <div class="admin-error" style="margin-bottom:16px">
+        {error}
+      </div>
+    )
+  }
+
+  <WorkForm values={entry} submitLabel="保存修改" />
+</AdminLayout>

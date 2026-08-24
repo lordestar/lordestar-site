@@ -1,0 +1,49 @@
+---
+import MasonryCard from './MasonryCard.astro';
+import type { FeedItem } from '../lib/data';
+import type { Locale } from '../i18n';
+
+interface Props {
+  /** 统一内容流（已按日期倒序） */
+  items: FeedItem[];
+  locale: Locale;
+}
+const { items, locale } = Astro.props;
+const hasPinned = Astro.slots.has('pinned');
+---
+
+<div class="masonry">
+  {
+    hasPinned && (
+      <div class="masonry-pin">
+        <slot name="pinned" />
+      </div>
+    )
+  }
+  {items.map((item) => <MasonryCard item={item} locale={locale} />)}
+</div>
+
+<style>
+  /* 瀑布流：CSS columns，自上而下、自左而右；卡片定宽、高度随内容 */
+  .masonry {
+    column-count: 3;
+    column-gap: 20px;
+  }
+
+  .masonry-pin {
+    break-inside: avoid;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 900px) {
+    .masonry {
+      column-count: 2;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .masonry {
+      column-count: 1;
+    }
+  }
+</style>

@@ -11,15 +11,26 @@ interface Props {
 const { locale, prefix } = Astro.props;
 const t = ui[locale];
 const year = new Date().getFullYear();
+const otherHref = locale === 'zh' ? '/en/' : '/';
+const otherLabel = locale === 'zh' ? 'EN' : '中文';
 ---
 
 <footer class="footer">
   <div class="container footer-inner">
     <div>
-      <p class="footer-line">{t.footer.line}</p>
+      <p class="footer-line">{t.site.name} · {t.footer.line}</p>
       <p class="footer-copy">© {year} lordestar. {t.footer.rights}</p>
     </div>
-    <div class="footer-links">
+
+    <nav class="footer-nav" aria-label="lordestar">
+      <a href={`${prefix}/`}>{t.nav.home}</a>
+      <a href={`${prefix}/journal/`}>{t.journal.allTitle}</a>
+      <a href={`${prefix}/diary/`}>{t.nav.diary}</a>
+      <a href="/app/new/">✎ {t.app.new}</a>
+    </nav>
+
+    <div class="footer-actions">
+      <a class="footer-lang" href={otherHref}>{otherLabel}</a>
       <a
         class="icon-btn"
         href="https://github.com/lordestar"
@@ -31,9 +42,6 @@ const year = new Date().getFullYear();
       </a>
       <a class="icon-btn" href="mailto:hello@lordestar.dev" aria-label="Email">
         <Icon name="mail" size={18} />
-      </a>
-      <a class="icon-btn" href={`${prefix}/works/`} aria-label={t.nav.works}>
-        <Icon name="music" size={18} />
       </a>
     </div>
   </div>
@@ -51,6 +59,7 @@ const year = new Date().getFullYear();
     align-items: center;
     justify-content: space-between;
     gap: 24px;
+    flex-wrap: wrap;
   }
 
   .footer-line {
@@ -67,12 +76,48 @@ const year = new Date().getFullYear();
     color: var(--muted);
   }
 
-  .footer-links {
+  .footer-nav {
     display: flex;
-    gap: 10px;
+    gap: 18px;
   }
 
-  @media (max-width: 560px) {
+  .footer-nav a {
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    transition: color 0.2s;
+  }
+
+  .footer-nav a:hover {
+    color: var(--aqua);
+  }
+
+  .footer-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .footer-lang {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--text-soft);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    height: 34px;
+    padding-inline: 12px;
+    display: inline-flex;
+    align-items: center;
+    transition:
+      color 0.25s,
+      border-color 0.25s;
+  }
+
+  .footer-lang:hover {
+    color: var(--aqua);
+    border-color: rgba(127, 200, 192, 0.5);
+  }
+
+  @media (max-width: 640px) {
     .footer-inner {
       flex-direction: column;
       align-items: flex-start;

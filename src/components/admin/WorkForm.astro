@@ -1,0 +1,140 @@
+---
+import type { WorkItem } from '../../lib/data';
+import type { Locale } from '../../i18n';
+
+interface Props {
+  values?: WorkItem; // 编辑时传入
+  submitLabel: string;
+}
+
+const { values, submitLabel } = Astro.props;
+const d = values?.data;
+const fmtDate = (date?: Date) =>
+  date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+const tagsText = d?.tags.join(', ') ?? '';
+---
+
+<form class="admin-form" method="post" enctype="multipart/form-data">
+  <div class="admin-row">
+    <div class="admin-field">
+      <label>语言 Locale</label>
+      <select name="locale">
+        <option value="zh" selected={!values || values.id.startsWith('zh')}>中文 zh</option>
+        <option value="en" selected={values?.id.startsWith('en')}>English en</option>
+      </select>
+    </div>
+    <div class="admin-field">
+      <label>Slug（URL 标识，如 ambient-drift）</label>
+      <input
+        type="text"
+        name="slug"
+        required
+        pattern="[a-z0-9][a-z0-9-]*"
+        placeholder="ambient-drift"
+        value={values?.id.split('/')[1] ?? ''}
+      />
+    </div>
+  </div>
+
+  <div class="admin-field">
+    <label>标题 Title</label>
+    <input type="text" name="title" required placeholder="作品标题" value={d?.title ?? ''} />
+  </div>
+
+  <div class="admin-row">
+    <div class="admin-field">
+      <label>类型 Type</label>
+      <select name="type">
+        <option value="music" selected={!d || d.type === 'music'}>音乐 music</option>
+        <option value="code" selected={d?.type === 'code'}>代码 code</option>
+      </select>
+    </div>
+    <div class="admin-field">
+      <label>日期 Date</label>
+      <input type="date" name="date" required value={fmtDate(d?.date)} />
+    </div>
+  </div>
+
+  <div class="admin-field">
+    <label>摘要 Summary</label>
+    <input type="text" name="summary" placeholder="一句话简介" value={d?.summary ?? ''} />
+  </div>
+
+  <div class="admin-field">
+    <label>标签 Tags（用逗号分隔，最多 10 个）</label>
+    <input type="text" name="tags" placeholder="示例, 氛围, 电子" value={tagsText} />
+  </div>
+
+  <div class="admin-row">
+    <div class="admin-field">
+      <label>封面 Cover（图片 URL 或上传）</label>
+      <input type="text" name="cover" placeholder="https://... 或点击上传" value={d?.cover ?? ''} />
+      <span class="upload-hint">可以粘贴外链，也可以点下面的按钮上传图片到本站</span>
+      <input type="file" accept="image/*" data-upload-target="cover" />
+    </div>
+    <div class="admin-field">
+      <label>音频 Audio（URL 或上传）</label>
+      <input type="text" name="audio" placeholder="https://... 或点击上传" value={d?.audio ?? ''} />
+      <span class="upload-hint">建议上传 mp3 等浏览器可播放格式</span>
+      <input type="file" accept="audio/*" data-upload-target="audio" />
+    </div>
+  </div>
+
+  <div class="admin-field">
+    <label>外部链接 Link（可选）</label>
+    <input type="text" name="link" placeholder="https://..." value={d?.link ?? ''} />
+  </div>
+
+  <label class="admin-check">
+    <input type="checkbox" name="featured" checked={d?.featured} />
+    精选 Featured（首页"近期作品"展示）
+  </label>
+
+  <div class="admin-field">
+    <label>正文 Body（Markdown）</label>
+    <textarea name="body" placeholder="支持 Markdown 语法…">{values?.body ?? ''}</textarea>
+  </div>
+
+  <div>
+    <button class="admin-btn" type="submit" style="height:40px;padding:0 22px">{submitLabel}</button
+    >
+    <a class="admin-btn" href="/admin/works/" style="margin-left:10px">取消</a>
+  </div>
+</form>
+
+<script>
+  // 极简上传器：选择文件后上传到 /api/upload，把返回的 URL 填入对应输入框
+  const files = Array.from(
+    document.querySelectorAll<HTMLInputElement>('input[data-upload-target]'),
+  );
+  for (const input of files) {
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      const target = input.dataset.uploadTarget;
+      if (!file || !target) return;
+      const label = input.previousElementSibling as HTMLElement | null;
+      if (label) {
+        label.textContent = '上传中…';
+        label.style.opacity = '0.6';
+      }
+      try {
+        const form = new FormData();
+        form.append('file', file);
+        const resp = await fetch('/api/upload', { method: 'POST', body: form });
+        const data = (await resp.json()) as { url?: string; error?: string };
+        if (!resp.ok || !data.url) throw new Error(data.error || '上传失败');
+        const field = document.querySelector<HTMLInputElement>(`input[name="${target}"]`);
+        if (field) field.value = data.url;
+        if (label) {
+          label.textContent = '✅ 上传成功';
+          label.style.opacity = '1';
+        }
+      } catch (err) {
+        if (label) {
+          label.textContent = '❌ 上传失败：' + (err as Error).message;
+          label.style.opacity = '1';
+        }
+      }
+    });
+  }
+</script>

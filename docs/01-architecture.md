@@ -1,5 +1,7 @@
 # 架构与目录说明
 
+> 2026-02 更新：M1 起站点从纯静态迁移为 **SSR + D1 数据库**（Cloudflare Workers），内容由 `src/content/` 迁入 D1 的 `works` / `posts` 表；本地开发在无 D1 时回退内容集合。
+
 ## 1. 系统总览
 
 ```text
@@ -8,23 +10,28 @@ GitHub 仓库
   ▼
 GitHub Actions ──► pnpm install --frozen-lockfile
   │                 pnpm check
-  ▼                 pnpm build
-Cloudflare Pages ──► dist/ 静态站点 + functions/ 后台登录
+  │                 pnpm build
+  │                 wrangler d1 migrations apply --remote
+  ▼                 wrangler deploy --config dist/server/wrangler.json
+Cloudflare Workers ──► ASSETS 静态资源（dist/client）
+  │                    + D1 数据库（works/posts）
+  │                    + KV（SESSION）/ Images（IMAGES）
 ```
 
-构建产物是纯静态 HTML/CSS/JS。只有 `/admin/oauth/*` 由 Cloudflare Pages Functions 提供运行时能力，用于 Decap CMS 的 GitHub OAuth。
+全部页面按需渲染（SSR）；关于页在构建时预渲染（`node:fs` 扫描照片）。内容实时读 D1，编辑后无需重新构建。
 
 ## 2. 技术选型
 
-| 模块     | 选型                                 | 职责                            |
-| -------- | ------------------------------------ | ------------------------------- |
-| 静态框架 | Astro 7                              | 页面路由、布局、内容集合、构建  |
-| UI 交互  | React 19 + `@astrojs/react`          | 粒子 Hero、液态作品卡片等交互岛 |
-| 样式     | Tailwind CSS 4 + 自定义 CSS 变量     | 全局主题、玻璃拟态、响应式      |
-| 内容     | Astro Content Collections + Markdown | 作品、随想的双语内容            |
-| 后台     | Decap CMS                            | `/admin` 可视化编辑             |
-| 部署     | Cloudflare Pages + GitHub Actions    | 自动构建、托管、Functions       |
-| 包管理   | pnpm 11                              | 依赖与锁文件                    |
+| 模块     | 选型                                      | 职责                            |
+| -------- | ----------------------------------------- | ------------------------------- |
+| 静态框架 | Astro 7（SSR，`output: 'server'`）        | 页面路由、布局、按需渲染、构建  |
+| 运行时   | Cloudflare Workers（@astrojs/cloudflare） | 服务器端渲染 + ASSETS 静态资源  |
+| 数据库   | Cloudflare D1（SQLite）                   | works/posts 内容存储            |
+| UI 交互  | React 19 + `@astrojs/react`               | 粒子 Hero、液态作品卡片等交互岛 |
+| 样式     | Tailwind CSS 4 + 自定义 CSS 变量          | 全局主题、玻璃拟态、响应式      |
+| 后台     | 自建表单页（M2，替换 Decap CMS）          | `/admin` 可视化编辑，写 D1      |
+| 部署     | Cloudflare Workers + GitHub Actions       | 自动构建、迁移、部署            |
+| 包管理   | pnpm 11                                   | 依赖与锁文件                    |
 
 ## 3. 目录结构
 
@@ -32,25 +39,29 @@ Cloudflare Pages ──► dist/ 静态站点 + functions/ 后台登录
 .
 ├── .github/workflows/       # CI 与部署流水线
 ├── docs/                    # 开发文档
-├── functions/admin/oauth/   # Pages Functions：GitHub OAuth
-├── oauth-worker/            # 同逻辑的独立 Worker 备用方案
+├── functions/admin/oauth/   # （已退役）Pages Functions GitHub OAuth，M1 后不再部署
+├── migrations/              # D1 迁移 SQL（0001_init.sql 建 works/posts 表）
+├── oauth-worker/            # （已退役）独立 Worker 备用方案
 ├── public/
-│   ├── admin/               # Decap CMS 页面与配置源文件
+│   ├── admin/               # Decap CMS 页面与配置源文件（M2 将移除）
 │   ├── photos/              # 关于页占位图片
 │   └── _headers             # 安全与缓存头
-├── scripts/                 # 工程脚本
+├── scripts/                 # 工程脚本（含 migrate-content.mjs 内容迁移）
 ├── src/
 │   ├── components/          # 页面组件与交互岛
 │   │   ├── image-galaxy/    # 照片墙漂移引擎（纯 TS）
 │   │   ├── liquid/          # 液态卡片 SDF 引擎（纯 TS/TSX）
 │   │   └── originkit/       # Originkit 生成的组件
-│   ├── content/             # 作品与随想的双语 Markdown
+│   ├── content/             # 作品与随想的双语 Markdown（迁移源，dev 兜底）
 │   ├── layouts/             # 基础布局
-│   ├── pages/               # Astro 路由
+│   ├── lib/data.ts          # 数据访问层：D1 查询 + 内容集合兜底
+│   ├── pages/               # Astro 路由（SSR）
 │   ├── styles/              # 全局样式
-│   ├── content.config.ts    # 内容集合 Schema
+│   ├── content.config.ts    # 内容集合 Schema（dev 兜底用）
+│   ├── env.d.ts             # Cloudflare 绑定类型（Cloudflare.Env）
 │   └── i18n.ts              # 双语文案与工具函数
-├── astro.config.mjs
+├── astro.config.mjs         # SSR + cloudflare adapter + 预渲染配置
+├── wrangler.toml            # Worker 配置（D1 绑定）
 ├── package.json
 └── pnpm-workspace.yaml
 ```
@@ -89,13 +100,11 @@ Cloudflare Pages ──► dist/ 静态站点 + functions/ 后台登录
 
 新交互组件应优先写成独立 TS/TSX 模块（参考 `src/components/liquid/` 与 `image-galaxy/`），避免大型内联脚本。
 
-## 7. 后台与 OAuth
+## 7. 后台与 OAuth（迁移后状态）
 
-- `public/admin/config.local.yml`：本地文件系统后台
-- `public/admin/config.prod.yml`：线上 GitHub 后台
-- `scripts/copy-admin.mjs` 在 `dev` / `build` 时复制生成 `public/admin/config.yml`
-- `functions/admin/oauth/auth.js` 与 `callback.js` 实现 GitHub OAuth
-- `oauth-worker/` 是同一逻辑的独立 Worker 版本，保留备用
+- **M1 后**：内容存于 D1，Decap CMS（git 工作流）与 `functions/admin/oauth`（GitHub OAuth）已退役，不再部署；
+- **M2 已完成**：自建后台（`/admin` 密码登录 + 作品/文章 CRUD + KV 媒体上传）；登录后续（M4）可升级 Cloudflare Access 邮箱验证码；
+- `public/admin/config.{local,prod}.yml` 与 `scripts/copy-admin.mjs` 已随 M2 移除。
 
 ## 8. 生成物规则
 

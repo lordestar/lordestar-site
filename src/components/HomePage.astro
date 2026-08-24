@@ -1,15 +1,16 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ParticleHero from './ParticleHero.astro';
 import DotCutHero from './DotCutHero.astro';
 import SectionHeading from './SectionHeading.astro';
-import WorkCard from './WorkCard.astro';
-import PostCard from './PostCard.astro';
-import MusicVisualizer from './MusicVisualizer.astro';
 import Icon from './Icon.astro';
+import PhotoGalaxy from './PhotoGalaxy.astro';
+import NowListeningCard from './now-listening/NowListeningCard';
+import JournalStream from './JournalStream.astro';
+import { getLatestPublicSong, getMergedFeed, requireDb } from '../lib/data';
+import { photos } from '../lib/photos.gen';
 import type { Locale } from '../i18n';
-import { ui, entriesFor } from '../i18n';
+import { ui } from '../i18n';
 
 interface Props {
   locale: Locale;
@@ -19,15 +20,35 @@ const { locale } = Astro.props;
 const t = ui[locale];
 const prefix = locale === 'zh' ? '' : '/en';
 
-const allWorks = await getCollection('works');
-const allPosts = await getCollection('posts');
-const works = entriesFor(allWorks, locale)
-  .filter((work) => work.data.featured)
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
-  .slice(0, 4);
-const posts = entriesFor(allPosts, locale)
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
-  .slice(0, 3);
+// 照片墙（构建时清单：public/photos）
+const galaxyImages = photos.map((p) => ({
+  src: `/photos/${p.file}`,
+  poster: /\.gif$/i.test(p.file)
+    ? `/photos/${p.file.replace(/\.gif$/i, '-poster.jpg')}`
+    : undefined,
+  caption: locale === 'zh' ? p.zh : p.en,
+}));
+
+// 最近在听（Holo 卡）+ 统一内容流（瀑布流，CSS columns 自上而下自左而右）
+let latestSong: Awaited<ReturnType<typeof getLatestPublicSong>> | undefined;
+let feed: Awaited<ReturnType<typeof getMergedFeed>> = [];
+try {
+  const db = await requireDb();
+  latestSong = await getLatestPublicSong(db);
+  feed = (await getMergedFeed(db, locale, { limit: 15 })).filter(
+    (item) => !(latestSong && item.key === `diary-${latestSong.dbId}`),
+  );
+} catch {
+  latestSong = undefined;
+  feed = [];
+}
+const songDate = latestSong
+  ? new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(latestSong.createdAt)
+  : '';
 ---
 
 <BaseLayout
@@ -39,19 +60,16 @@ const posts = entriesFor(allPosts, locale)
 
   <DotCutHero variant="bar" symbol="L" />
 
+  <!-- 关于（下放到首页） -->
   <section class="section">
     <div class="container">
-      <div class="about-panel glass-strong" data-reveal>
-        <div class="about-copy">
+      <div class="home-about glass-strong" data-reveal>
+        <div class="home-about-copy">
           <span class="eyebrow">{t.home.aboutEyebrow}</span>
           <h2 class="about-title">{t.home.aboutTitle}</h2>
           <p class="about-body">{t.home.aboutBody}</p>
-          <a class="text-link" href={`${prefix}/about/`}>
-            {t.home.aboutCta}
-            <Icon name="arrow-right" size={16} />
-          </a>
         </div>
-        <div class="about-facts">
+        <div class="home-facts">
           {
             ui[locale].about.facts.map((fact, index) => (
               <div class="fact-row" style={`--reveal-delay: ${index * 70}ms`}>
@@ -65,70 +83,85 @@ const posts = entriesFor(allPosts, locale)
     </div>
   </section>
 
-  <section class="section">
+  <!-- 照片墙（从"关于"页移来） -->
+  <section class="section galaxy-section">
     <div class="container">
-      <SectionHeading
-        eyebrow={t.home.worksEyebrow}
-        title={t.home.worksTitle}
-        ctaHref={`${prefix}/works/`}
-        ctaLabel={t.home.worksCta}
-      />
-      {
-        works.length > 0 ? (
-          <div class="works-grid">
-            {works.map((work, index) => (
-              <div style={`--reveal-delay: ${(index % 2) * 90}ms`}>
-                <WorkCard entry={work} locale={locale} />
-              </div>
-            ))}
+      <div class="galaxy-frame glass" data-reveal>
+        <PhotoGalaxy images={galaxyImages} locale={locale}>
+          <div class="galaxy-copy">
+            <span class="eyebrow">{ui[locale].about.galleryEyebrow}</span>
+            <h2>{ui[locale].about.galleryTitle}</h2>
+            <p>{ui[locale].about.galleryBody}</p>
           </div>
-        ) : (
-          <p class="empty">{t.works.empty}</p>
-        )
-      }
-    </div>
-  </section>
-
-  <section class="section music-band">
-    <div class="container">
-      <div class="music-panel glass" data-reveal>
-        <div class="music-copy">
-          <span class="eyebrow">{t.home.musicEyebrow}</span>
-          <h2>{t.home.musicTitle}</h2>
-          <p>{t.home.musicBody}</p>
-          <a class="text-link" href={`${prefix}/works/`}>
-            {t.home.worksCta}
-            <Icon name="arrow-right" size={16} />
-          </a>
-        </div>
-        <div class="music-stage">
-          <MusicVisualizer accent="#f08a6f" />
-        </div>
+        </PhotoGalaxy>
       </div>
     </div>
   </section>
 
+  <!-- 日记本（Holo 卡 = 最近在听，固定左上第一张） -->
   <section class="section">
     <div class="container">
-      <SectionHeading
-        eyebrow={t.home.thoughtsEyebrow}
-        title={t.home.thoughtsTitle}
-        ctaHref={`${prefix}/thoughts/`}
-        ctaLabel={t.home.thoughtsCta}
-      />
+      <SectionHeading eyebrow={t.journal.sectionEyebrow} title={t.journal.sectionTitle} />
+      <p class="section-subtitle" data-reveal>{t.journal.sectionSubtitle}</p>
       {
-        posts.length > 0 ? (
-          <div class="posts-grid">
-            {posts.map((post, index) => (
-              <div style={`--reveal-delay: ${index * 80}ms`}>
-                <PostCard entry={post} locale={locale} prefix={prefix} />
+        latestSong || feed.length > 0 ? (
+          <JournalStream items={feed} locale={locale}>
+            {latestSong && (
+              <div slot="pinned">
+                <NowListeningCard
+                  client:load
+                  label={t.home.nowListeningTitle}
+                  diaryHref={`${prefix}/diary/`}
+                  song={{
+                    title: latestSong.title,
+                    artist: latestSong.artist,
+                    cover: latestSong.cover,
+                    songUrl: latestSong.songUrl,
+                    dateLabel: songDate,
+                  }}
+                />
               </div>
-            ))}
-          </div>
+            )}
+          </JournalStream>
         ) : (
-          <p class="empty">{t.thoughts.empty}</p>
+          <p class="empty">{t.home.nowListeningEmpty}</p>
         )
       }
+      <div class="view-all" data-reveal>
+        <a class="btn" href={`${prefix}/journal/`}>
+          {t.journal.viewAll} →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 轨迹 + 常出没 -->
+  <section class="section">
+    <div class="container">
+      <div class="home-meta-grid">
+        <div class="timeline-block glass" data-reveal>
+          <span class="eyebrow">{ui[locale].about.timelineTitle}</span>
+          <div class="timeline">
+            {
+              ui[locale].about.timeline.map((item) => (
+                <div class="timeline-item">
+                  <span class="timeline-date">{item.date}</span>
+                  <div class="timeline-content">
+                    <h3>{item.title}</h3>
+                    <p>{item.text}</p>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+        <div class="tools-block glass" data-reveal>
+          <span class="eyebrow">{ui[locale].about.toolsTitle}</span>
+          <div class="tools-list">
+            {ui[locale].about.tools.map((tool) => <span class="tag tool-tag">{tool}</span>)}
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -156,14 +189,48 @@ const posts = entriesFor(allPosts, locale)
 </BaseLayout>
 
 <style>
-  .about-panel {
+  /* 照片墙（移植自原关于页） */
+  .galaxy-section {
+    padding-block: 0 96px;
+  }
+
+  .galaxy-frame {
+    position: relative;
+    height: 560px;
+    overflow: hidden;
+  }
+
+  .galaxy-copy {
+    max-width: 560px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+  }
+
+  .galaxy-copy h2 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 680;
+    letter-spacing: 0;
+    line-height: 1.05;
+  }
+
+  .galaxy-copy p {
+    color: var(--text-soft);
+    font-size: 1.02rem;
+  }
+
+  .home-about {
     display: grid;
     grid-template-columns: 1.4fr 1fr;
     gap: 40px;
     padding: 40px;
   }
 
-  .about-copy {
+  .home-about-copy {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -184,7 +251,7 @@ const posts = entriesFor(allPosts, locale)
     font-size: 1.02rem;
   }
 
-  .about-facts {
+  .home-facts {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -219,50 +286,80 @@ const posts = entriesFor(allPosts, locale)
     text-align: right;
   }
 
-  .works-grid,
-  .posts-grid {
+  .view-all {
+    margin-top: 28px;
+    text-align: center;
+  }
+
+  .section-subtitle {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin: -14px 0 26px;
+  }
+
+  /* 轨迹 + 常出没 */
+  .home-meta-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1.3fr 1fr;
     gap: 20px;
+    align-items: start;
   }
 
-  .music-band {
-    padding-block: 0 88px;
-  }
-
-  .music-panel {
-    display: grid;
-    grid-template-columns: 1fr 1.2fr;
-    gap: 36px;
-    padding: 36px;
-  }
-
-  .music-copy {
+  .timeline-block,
+  .tools-block {
+    padding: 30px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    gap: 18px;
+  }
+
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .timeline-item {
+    display: grid;
+    grid-template-columns: 96px 1fr;
     gap: 16px;
   }
 
-  .music-copy h2,
-  .contact-panel h2 {
+  .timeline-date {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    padding-top: 3px;
+  }
+
+  .timeline-content h3 {
     font-family: var(--font-display);
-    font-size: clamp(1.6rem, 2.6vw, 2.3rem);
-    font-weight: 680;
+    font-size: 1.05rem;
+    font-weight: 650;
     letter-spacing: 0;
   }
 
-  .music-copy p,
-  .contact-panel p {
+  .timeline-content p {
     color: var(--text-soft);
+    font-size: 0.9rem;
+    margin-top: 4px;
   }
 
-  .music-stage {
-    min-height: 200px;
+  .tools-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .tool-tag {
+    font-size: 0.85rem;
+    padding: 6px 14px;
   }
 
   .empty {
     color: var(--muted);
+    text-align: center;
+    padding: 40px 0;
   }
 
   .contact-band {
@@ -283,6 +380,17 @@ const posts = entriesFor(allPosts, locale)
     gap: 12px;
   }
 
+  .contact-panel h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 2.6vw, 2.3rem);
+    font-weight: 680;
+    letter-spacing: 0;
+  }
+
+  .contact-panel p {
+    color: var(--text-soft);
+  }
+
   .contact-actions {
     display: flex;
     gap: 12px;
@@ -290,21 +398,23 @@ const posts = entriesFor(allPosts, locale)
   }
 
   @media (max-width: 860px) {
-    .about-panel,
-    .music-panel {
+    .galaxy-frame {
+      height: 420px;
+    }
+
+    .home-about {
       grid-template-columns: 1fr;
       padding: 28px;
     }
 
-    .about-facts {
+    .home-facts {
       border-left: 0;
       padding-left: 0;
       border-top: 1px solid var(--border);
       padding-top: 8px;
     }
 
-    .works-grid,
-    .posts-grid {
+    .home-meta-grid {
       grid-template-columns: 1fr;
     }
 

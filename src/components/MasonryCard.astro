@@ -1,0 +1,303 @@
+---
+import MusicVisualizer from './MusicVisualizer.astro';
+import type { FeedItem } from '../lib/data';
+import type { Locale } from '../i18n';
+import { ui } from '../i18n';
+
+interface Props {
+  item: FeedItem;
+  locale: Locale;
+}
+
+const { item, locale } = Astro.props;
+const t = ui[locale];
+const prefix = locale === 'zh' ? '' : '/en';
+const chip = t.journal.chips[item.kind];
+const accent = item.kind === 'music' ? '#f08a6f' : '#7fc8c0';
+const dateLabel = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+}).format(item.date);
+
+// 正文换行显示
+const noteLines = item.summary ? item.summary.split('\n') : [];
+---
+
+<article
+  class:list={['journal-card', `journal-${item.kind}`, item.kind === 'text' && 'has-lines']}
+  data-reveal
+>
+  {
+    item.kind === 'photo' && item.image && (
+      <div class="j-photo-wrap">
+        <img class="j-photo" src={item.image} alt={item.title} loading="lazy" />
+        <span class="j-tape" aria-hidden="true" />
+      </div>
+    )
+  }
+
+  {
+    item.kind === 'music' && (
+      <div class="j-cover-wrap">
+        {item.cover ? (
+          <img class="j-cover" src={item.cover} alt={item.title} loading="lazy" />
+        ) : (
+          <span class="j-cover-placeholder">♪</span>
+        )}
+        <span class="j-tape" aria-hidden="true" />
+      </div>
+    )
+  }
+
+  {
+    item.kind === 'code' && item.cover && (
+      <div class="j-cover-wrap">
+        <img class="j-cover" src={item.cover} alt={item.title} loading="lazy" />
+        <span class="j-tape" aria-hidden="true" />
+      </div>
+    )
+  }
+
+  <div class="j-body">
+    <div class="j-meta">
+      <span class="j-chip">{chip}</span>
+      <time class="j-date">{dateLabel}</time>
+    </div>
+    <h3 class="j-title">{item.title}</h3>
+    {item.subtitle && <p class="j-subtitle">{item.subtitle}</p>}
+
+    {
+      item.summary && (
+        <div class="j-note">
+          {noteLines.map((line) => (
+            <p>{line}</p>
+          ))}
+        </div>
+      )
+    }
+
+    {
+      item.kind === 'music' && item.audio && (
+        <div class="j-player">
+          <MusicVisualizer audio={item.audio} accent={accent} title={item.title} />
+        </div>
+      )
+    }
+
+    <div class="j-actions">
+      {
+        item.kind === 'code' && item.link && (
+          <a class="text-link" href={item.link} target="_blank" rel="noreferrer">
+            {t.works.external} ↗
+          </a>
+        )
+      }
+      {
+        item.kind === 'song' && item.link && (
+          <a class="text-link" href={item.link} target="_blank" rel="noreferrer">
+            {t.diary.playOnNcm} ↗
+          </a>
+        )
+      }
+      {
+        item.kind === 'post' && item.detailHref && (
+          <a class="text-link" href={item.detailHref}>
+            {t.thoughts.readMore} →
+          </a>
+        )
+      }
+      {
+        item.kind === 'music' && item.detailHref && (
+          <a class="text-link" href={item.detailHref}>
+            {t.thoughts.readMore} →
+          </a>
+        )
+      }
+    </div>
+  </div>
+</article>
+
+<style>
+  /* ── 日记本纸卡（所有类型共用） ── */
+  .journal-card {
+    position: relative;
+    background: linear-gradient(165deg, #f8f4e9 0%, #f1ebdc 55%, #ece5d3 100%);
+    border-radius: 4px;
+    padding: 16px 18px 14px;
+    box-shadow:
+      0 14px 30px rgba(0, 0, 0, 0.36),
+      0 2px 5px rgba(0, 0, 0, 0.2),
+      inset 0 0 0 1px rgba(120, 108, 84, 0.15);
+    transform: rotate(var(--tilt, 0.3deg));
+    break-inside: avoid;
+    margin-bottom: 20px;
+  }
+
+  .journal-card:nth-child(3n + 2) {
+    --tilt: -0.35deg;
+  }
+
+  /* 文字卡：横线（行距 27px 与正文对齐） */
+  .journal-card.has-lines::before {
+    content: '';
+    position: absolute;
+    inset: 62px 14px 12px 14px;
+    background-image: repeating-linear-gradient(
+      transparent,
+      transparent 26px,
+      rgba(122, 110, 86, 0.15) 27px
+    );
+    pointer-events: none;
+  }
+
+  .j-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .j-chip {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    color: #6b5c42;
+    border: 1px solid rgba(120, 104, 76, 0.4);
+    background: rgba(255, 251, 240, 0.55);
+  }
+
+  .j-date {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: rgba(90, 78, 58, 0.75);
+  }
+
+  .j-title {
+    font-family: var(--font-display);
+    font-size: 1.16rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    color: #3a3326;
+    line-height: 1.3;
+    margin-top: 8px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .j-subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: rgba(90, 78, 58, 0.8);
+    margin-top: 2px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .j-note {
+    margin-top: 6px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .j-note p {
+    color: #4d4534;
+    font-size: 0.93rem;
+    line-height: 27px;
+  }
+
+  /* 照片（拍立得 + 胶带） */
+  .j-photo-wrap,
+  .j-cover-wrap {
+    position: relative;
+    margin: 10px 0 12px;
+    z-index: 1;
+  }
+
+  .j-photo,
+  .j-cover {
+    display: block;
+    width: 100%;
+    border: 5px solid #fdfbf4;
+    border-bottom-width: 14px;
+    border-radius: 2px;
+    box-shadow: 0 8px 16px rgba(60, 50, 32, 0.32);
+    transform: rotate(-1.4deg);
+    transition: transform 0.3s var(--ease-out);
+  }
+
+  .journal-card:hover .j-photo,
+  .journal-card:hover .j-cover {
+    transform: rotate(-0.4deg) scale(1.01);
+  }
+
+  /* 照片：完整显示，不裁切；高度随图片自然比例 */
+  .j-photo {
+    width: 100%;
+    height: auto;
+    max-height: 460px;
+    object-fit: contain;
+    background: #f3eedd;
+  }
+
+  .j-cover {
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+  }
+
+  .j-cover-placeholder {
+    display: block;
+    aspect-ratio: 1 / 1;
+    background: radial-gradient(
+      circle at 50% 45%,
+      #3a4a5c 0%,
+      #2b3949 55%,
+      #1b2530 56%,
+      #2b3949 100%
+    );
+    border: 5px solid #fdfbf4;
+    border-bottom-width: 14px;
+    border-radius: 2px;
+    display: grid;
+    place-items: center;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 2.4rem;
+  }
+
+  .j-tape {
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    width: 66px;
+    height: 18px;
+    background: rgba(235, 205, 150, 0.72);
+    border-left: 1px dashed rgba(160, 130, 80, 0.4);
+    border-right: 1px dashed rgba(160, 130, 80, 0.4);
+    transform: translateX(-50%) rotate(-2deg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    pointer-events: none;
+  }
+
+  /* 音乐播放器（黑胶感） */
+  .j-player {
+    margin-top: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+
+  .j-actions {
+    margin-top: 10px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .j-actions .text-link {
+    font-size: 0.85rem;
+  }
+</style>
