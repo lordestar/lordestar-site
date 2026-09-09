@@ -13,7 +13,7 @@ pnpm dev
 
 打开 `http://localhost:4321`。中文为默认语言，英文在 `/en/`。
 
-手机 App（PWA 记录）：「记一笔」悬浮按钮或 `/app/new/`，支持粘贴网易云链接记歌、写感想、传照片；`/app/records/` 管理记录（编辑/删除/公开开关）。已配置 Web Share Target——安卓任意 App 分享内容可直接投递到记一笔。
+Android 独立 App「Lordestar」（自用记歌/感想/照片，替代原网站内 PWA「记一笔」）：源码在 `lordestar-app/`（Flutter）。构建安装与令牌配置见 [docs/09-standalone-android-app.md](docs/09-standalone-android-app.md)；网站已下线 `/app` 手机记录入口（`/app*` 重定向回首页），记录统一从 App 提交，实时展示在 `lordestar.cn`。
 
 本地后台（编辑作品/文章）：
 
@@ -41,7 +41,7 @@ pnpm dev
 
 ## 项目状态
 
-项目已上线部署（`https://lordestar.pages.dev`），当前处于上线后的迭代开发阶段。页面骨架、双语路由、内容集合、CMS 后台、Cloudflare 部署和大部分视觉交互已经可用；作品详情页、RSS、Sitemap、测试体系等仍在路线图中。
+项目已上线部署（主域名 **https://lordestar.cn**，`lordestar.pages.dev` 为反向代理兜底），处于上线后的迭代开发阶段。已交付：Cloudflare Workers SSR + D1、后台 /admin、听歌日记 /diary、首页「最近在听」Holo 卡、独立 Android App（Lordestar，见 `lordestar-app/`）。
 
 当前进度和后续计划见 [docs/06-roadmap.md](docs/06-roadmap.md)。
 
@@ -54,6 +54,9 @@ pnpm dev
 - [部署与 CI/CD](docs/04-deployment.md)
 - [工程开发规范](docs/05-engineering-standards.md)
 - [开发路线图](docs/06-roadmap.md)
+- [手机记录 App 需求分析（PWA 版，已由 09 取代）](docs/07-diary-app-requirements.md)
+- [项目计划 M1–M4](docs/08-project-plan.md)
+- [独立 Android App 规划（现行方案）](docs/09-standalone-android-app.md)
 
 ## 内容管理
 

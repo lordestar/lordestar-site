@@ -1,7 +1,13 @@
 # 独立 Android App（Lordestar，自用）重构规划
 
-> 状态：规划定稿（2026-02）
+> 状态：规划定稿（2026-02）→ **已实现（2026-09，S1–S4 完成）**
 > 背景：网站内嵌的 `/app`（PWA「记一笔」）体验不满足要求。经确认改为**真安装的原生 Android App**，仅站长本人使用；网站保留全部展示页面与 `/admin`，移除手机记录入口。
+>
+> **实现要点补充（2026-09）**：
+> - App 源码在 `lordestar-app/`（Flutter 3.44，Material 3 深色主题对齐网站色板）。
+> - 网站 `/app*` 已下线并 301 → `/`；`/api/*` 全部支持 `Authorization: Bearer <APP_TOKEN>`（自用 App），后台 `/admin` 仍用 Session。
+> - **网易云解析改为在手机端执行**（`lib/src/ncm_local.dart`）：实测 Cloudflare Worker 出口访问 music.163.com 被封锁（服务端 resolve/search 均失败），而手机国内网络可直连；解析成功后封面外链由 App 下载并走 `/api/upload` 上传本站媒体库，cover 存 `/media/…`。服务端 `/api/ncm/resolve`、`/api/ncm/search` 保留作兜底与后台用。
+> - 发布签名：`keystore/lordestar.jks`（不入库）+ `lordestar-app/android/key.properties`；release APK 输出 `build/app/outputs/flutter-apk/app-release.apk`。
 
 ## 1. 结论（用户已确认）
 

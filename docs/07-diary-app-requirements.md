@@ -1,6 +1,6 @@
 # 手机记录 App（听歌日记 / 感想 / 照片）需求分析
 
-> 状态：需求定稿（2026-02）
+> 状态：~~需求定稿（2026-02）~~ **已被 [09-standalone-android-app.md](09-standalone-android-app.md) 取代**（2026-09：PWA「记一笔」下线，改为独立 Android 原生 App「Lordestar」，仅本人使用；本文保留作历史需求参考）。
 > 决策背景：现有站点为纯静态（Astro + Markdown + Decap CMS），本需求要求引入服务器与数据库，把内容从 Git 仓库迁入数据库，并新增"手机端记录 → 网站展示"闭环。已确认使用 Cloudflare 免费栈（Pages Functions + D1 + R2 + Access），**月成本 ¥0**。
 
 ## 1. 产品目标
