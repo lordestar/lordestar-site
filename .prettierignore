@@ -13,3 +13,6 @@ pnpm-lock.yaml
 *.log
 *.yml
 *.yaml
+lordestar-app/
+build/
+keystore/
