@@ -30,3 +30,7 @@ cookies.txt
 
 # self-use App token (do not commit)
 .app-token.txt
+
+# Android release keystore (self-use signing)
+keystore/
+/build/
