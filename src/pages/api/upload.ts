@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { isAuthedApi } from '../../lib/admin';
 import { putMedia } from '../../lib/media';
 
 const MAX_SIZE = 20 * 1024 * 1024; // 20MB（GitHub 单文件上限 100MB）
@@ -16,10 +17,10 @@ function sanitizeName(name: string): string {
   return base || 'file';
 }
 
-/** 上传文件到 GitHub 媒体仓库，返回可访问的 URL。需管理员登录。 */
+/** 上传文件到 GitHub 媒体仓库，返回可访问的 URL。需鉴权（后台会话或 App 令牌）。 */
 export const POST: APIRoute = async ({ request, session }) => {
   try {
-    const authed = (await session?.get('admin')) === true;
+    const authed = await isAuthedApi(session, request.headers.get('authorization'));
     if (!authed) return json({ error: '未登录或会话过期' }, 401);
 
     const form = await request.formData();

@@ -210,6 +210,33 @@ export async function resolveShare(text: string): Promise<ResolveResult> {
   return { ok: false, error: '无法解析链接，请手动填写歌名/歌手' };
 }
 
+/** 按关键词（歌名/歌手）搜索歌曲（供 App「搜索」入口）。封面一并入库。 */
+export async function resolveByQuery(query: string): Promise<ResolveResult> {
+  const trimmed = query.trim();
+  if (!trimmed) return { ok: false, error: '内容为空' };
+
+  const id = await searchSongId(trimmed);
+  if (!id) return { ok: false, error: '没有找到匹配的歌曲，请换关键词试试' };
+
+  const meta = await fetchSongMeta(id);
+  if (!meta || !meta.title) {
+    return { ok: false, error: '找到歌曲但获取信息失败，请稍后再试' };
+  }
+
+  const cover = meta.cover ? await storeCover(meta.cover, id) : '';
+  return {
+    ok: true,
+    song: {
+      id,
+      title: meta.title,
+      artist: meta.artist ?? '',
+      album: meta.album ?? '',
+      cover,
+      songUrl: `https://music.163.com/#/song?id=${id}`,
+    },
+  };
+}
+
 /** 便捷：按歌曲 id 解析（供后端直接使用）。 */
 export function getNcmEnv(): { owner: string; repo: string } {
   return { owner: env.GITHUB_OWNER || 'lordestar', repo: env.GITHUB_REPO || 'lordestar-media' };

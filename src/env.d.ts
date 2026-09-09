@@ -10,6 +10,8 @@ declare namespace Cloudflare {
     MEDIA_KV?: KVNamespace;
     /** 后台管理密码（线上用 wrangler secret put，本地用 .dev.vars） */
     ADMIN_PASSWORD?: string;
+    /** 自用 App 令牌（线上 wrangler secret put，本地 .dev.vars；App 请求带 Bearer） */
+    APP_TOKEN?: string;
     /** GitHub 媒体库 Token（线上用 wrangler secret put，本地用 .dev.vars） */
     GITHUB_TOKEN?: string;
     /** GitHub 媒体库配置（wrangler.toml vars） */

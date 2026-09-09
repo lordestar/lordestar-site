@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { isAuthedApi } from '../../../lib/admin';
 import {
   deleteDiary,
   getDiaryByDbId,
@@ -38,8 +39,8 @@ function parseDiaryInput(
   };
 }
 
-/** GET：单条记录（私有需登录）。PUT/DELETE：需登录。 */
-export const GET: APIRoute = async ({ params, session }) => {
+/** GET：单条记录（私有需鉴权）。PUT/DELETE：需鉴权。 */
+export const GET: APIRoute = async ({ params, session, request }) => {
   const db = await requireDb();
   const id = Number(params.id ?? 0);
   if (!id) return json({ error: '缺少 id' }, 400);
@@ -47,7 +48,7 @@ export const GET: APIRoute = async ({ params, session }) => {
   const item = await getDiaryByDbId(db, id);
   if (!item) return json({ error: '记录不存在' }, 404);
 
-  const authed = (await session?.get('admin')) === true;
+  const authed = await isAuthedApi(session, request.headers.get('authorization'));
   if (!item.public && !authed) return json({ error: '无权访问' }, 403);
 
   return json({ item });
@@ -55,7 +56,7 @@ export const GET: APIRoute = async ({ params, session }) => {
 
 export const PUT: APIRoute = async ({ request, params, session }) => {
   try {
-    const authed = (await session?.get('admin')) === true;
+    const authed = await isAuthedApi(session, request.headers.get('authorization'));
     if (!authed) return json({ error: '未登录或会话过期' }, 401);
 
     const id = Number(params.id ?? 0);
@@ -71,9 +72,9 @@ export const PUT: APIRoute = async ({ request, params, session }) => {
   }
 };
 
-export const DELETE: APIRoute = async ({ params, session }) => {
+export const DELETE: APIRoute = async ({ request, params, session }) => {
   try {
-    const authed = (await session?.get('admin')) === true;
+    const authed = await isAuthedApi(session, request.headers.get('authorization'));
     if (!authed) return json({ error: '未登录或会话过期' }, 401);
 
     const id = Number(params.id ?? 0);

@@ -35,6 +35,22 @@ export function markAuthed(session: SessionLike | undefined): void {
   session?.set('admin', true, { ttl: 60 * 60 * 24 * 7 });
 }
 
+/**
+ * API 鉴权：管理员 Session 或 App Bearer 令牌（APP_TOKEN secret）任一通过即可。
+ * 原生 App 无法维护网站登录会话，自用 App 持有 APP_TOKEN，每次请求带
+ * `Authorization: Bearer <token>`；网站后台仍走 Session。
+ */
+export async function isAuthedApi(
+  session: SessionLike | undefined,
+  authHeader: string | null,
+): Promise<boolean> {
+  if (await isAuthed(session)) return true;
+  const expected = env.APP_TOKEN;
+  if (typeof expected !== 'string' || expected.length === 0) return false;
+  const token = authHeader?.replace(/^Bearer\s+/i, '').trim() ?? '';
+  return token.length > 0 && token === expected;
+}
+
 // ── 表单解析与校验 ─────────────────────────────────────────────────────────
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,79}$/;

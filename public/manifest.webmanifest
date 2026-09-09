@@ -17,14 +17,5 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ],
-  "share_target": {
-    "action": "/app/new/",
-    "method": "GET",
-    "params": {
-      "title": "title",
-      "text": "share",
-      "url": "url"
-    }
-  }
+  ]
 }

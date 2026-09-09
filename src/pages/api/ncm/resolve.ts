@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { isAuthedApi } from '../../../lib/admin';
 import { resolveShare } from '../../../lib/ncm';
 
 function json(data: unknown, status = 200): Response {
@@ -8,10 +9,10 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
-/** 解析网易云分享文本/链接 → 歌曲信息。需管理员登录。 */
+/** 解析网易云分享文本/链接 → 歌曲信息。需鉴权（后台会话或 App 令牌）。 */
 export const POST: APIRoute = async ({ request, session }) => {
   try {
-    const authed = (await session?.get('admin')) === true;
+    const authed = await isAuthedApi(session, request.headers.get('authorization'));
     if (!authed) return json({ error: '未登录或会话过期' }, 401);
 
     let text = '';

@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { isAuthedApi } from '../../lib/admin';
 import {
   createDiary,
   listAllDiary,
@@ -38,17 +39,17 @@ function parseDiaryInput(
   };
 }
 
-/** GET：记录列表（未登录仅公开；登录后全部）。POST：新增记录（需登录）。 */
-export const GET: APIRoute = async ({ session }) => {
+/** GET：记录列表（未登录仅公开；登录/令牌后全部）。POST：新增记录（需鉴权）。 */
+export const GET: APIRoute = async ({ session, request }) => {
   const db = await requireDb();
-  const authed = (await session?.get('admin')) === true;
+  const authed = await isAuthedApi(session, request.headers.get('authorization'));
   const items = authed ? await listAllDiary(db) : await listPublicDiary(db);
   return json({ items });
 };
 
 export const POST: APIRoute = async ({ request, session }) => {
   try {
-    const authed = (await session?.get('admin')) === true;
+    const authed = await isAuthedApi(session, request.headers.get('authorization'));
     if (!authed) return json({ error: '未登录或会话过期' }, 401);
 
     const parsed = parseDiaryInput(await request.json().catch(() => null));

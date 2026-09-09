@@ -12,7 +12,7 @@ output/
 !.env.example
 .dev.vars
 
-# 临时后台密码文件（记住密码后请删除）
+# 涓存椂鍚庡彴瀵嗙爜鏂囦欢锛堣浣忓瘑鐮佸悗璇峰垹闄わ級
 .admin-password.txt
 
 .DS_Store
@@ -25,5 +25,8 @@ scripts/seed-data.sql
 # Generated photos manifest (regenerable via scripts/photos-manifest.mjs)
 src/lib/photos.gen.ts
 
-# ���� curl ���Բ���
+# 本地 curl 测试残留
 cookies.txt
+
+# self-use App token (do not commit)
+.app-token.txt

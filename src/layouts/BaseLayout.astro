@@ -39,7 +39,6 @@ const prefix = locale === 'zh' ? '' : '/en';
       <slot />
     </main>
     <Footer locale={locale} prefix={prefix} />
-    <a class="fab" href="/app/new/" aria-label="记一笔" title="记一笔">✎</a>
     <script>
       const revealEls = document.querySelectorAll('[data-reveal]');
       if ('IntersectionObserver' in window) {
